@@ -8,10 +8,10 @@ fake = Faker()
 domains = ['example.com', 'hospital.com', 'medclinic.org', 'healthcare.net']
 
 
-# Generowanie lekarzy z emailami opartymi o imię i nazwisko
+# Generowanie lekarzy z emailami opartymi o imię i nazwisk
 def generate_doctors(n):
     doctors = []
-    specializations = ['Kardiologia', 'Neurologia', 'Ortopedia', 'Pediatria', 'Dermatologia']
+    specializations = ['Cardiology', 'Neurology', 'Orthopedics', 'Pediatrics', 'Dermatology']
 
     for i in range(1, n + 1):
         first_name = fake.first_name()
@@ -48,15 +48,15 @@ def generate_patients(n):
 # Generowanie wizyt pacjentów u lekarzy
 def generate_appointments(n, doctor_ids, patient_ids):
     diagnoses = [
-        'Nadciśnienie tętnicze', 'Cukrzyca typu 2', 'Przeziębienie', 'Zapalenie płuc',
-        'Astma', 'Migrena', 'Infekcja dróg moczowych', 'Depresja', 'Reumatoidalne zapalenie stawów',
-        'Zaburzenia snu', 'Niewydolność serca', 'Choroba Alzheimera', 'Zapalenie oskrzeli'
+        'Hypertension', 'Type 2 diabetes', 'Cold', 'Pneumonia',
+        'Asthma', 'Migraine', 'Urinary tract infection', 'Depression', 'Rheumatoid arthritis',
+        'Sleep disorders', 'Heart failure', 'Alzheimers disease', 'Bronchitis'    
     ]
 
     treatments = [
-        'Leczenie farmakologiczne', 'Fizjoterapia', 'Konsultacja psychologiczna',
-        'Zabieg chirurgiczny', 'Antybiotyki', 'Leki przeciwzapalne', 'Ćwiczenia oddechowe',
-        'Dieta niskosodowa', 'Leki przeciwbólowe', 'Leki przeciwhistaminowe'
+        'Pharmacological treatment', 'Physiotherapy', 'Psychological consultation',
+        'Surgery', 'Antibiotics', 'Anti-inflammatory drugs', 'Breathing exercises',
+        'Low-sodium diet', 'Painkillers', 'Antihistamines'
     ]
 
     appointments = []
@@ -88,15 +88,15 @@ def generate_database(num_doctors, num_patients, num_appointments):
                                          [p['patient_id'] for p in patients])
 
     # Zapisanie danych do plików CSV
-    save_to_csv(doctors, 'doktorzy10.csv')
-    save_to_csv(patients, 'pacjenci10.csv')
-    save_to_csv(appointments, 'wizyty10.csv')
+    save_to_csv(doctors, 'doctors.csv')
+    save_to_csv(patients, 'patients.csv')
+    save_to_csv(appointments, 'appointments.csv')
 
 
 if __name__ == "__main__":
-    num_doctors = int(input("Ile lekarzy wygenerować? "))
-    num_patients = int(input("Ile pacjentów wygenerować? "))
-    num_appointments = int(input("Ile wizyt wygenerować? "))
+    num_doctors = int(input("How many doctors to generate? "))
+    num_patients = int(input("How many patients to generate? "))
+    num_appointments = int(input("How many appointments to generate? "))
 
     generate_database(num_doctors, num_patients, num_appointments)
-    print("Dane zostały wygenerowane i zapisane do plików CSV.")
+    print("Data was generated and saved to CSV files.")
