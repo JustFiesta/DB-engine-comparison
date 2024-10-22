@@ -20,10 +20,12 @@ Comparison of the MongoDB and MariaDB engines by performance
         mongosh
         ```
 
-2. Import data from csvs - IN PROGRESS
+2. Import data from csvs - TODO
 
-3. compare usage of resources - ????
+3. Opis -> setup explanation
 
-4. create excel
+4. compare usage of resources - ????
 
-5. create paper
+5. create excel
+
+6. create paper
