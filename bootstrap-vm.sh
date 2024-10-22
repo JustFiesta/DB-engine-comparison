@@ -39,7 +39,7 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.
 # Update apt and install Docker
 echo "Installing Docker..."
 sudo apt-get update -y
-sudo apt-get install -y mariadb-server mongodb-org docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo apt-get install -y zip mariadb-server mongodb-org docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
 # Enable and start Docker service
 echo "Enabling and starting Docker service..."
