@@ -4,7 +4,7 @@ Comparison of the MongoDB and MariaDB engines by performance
 
 ## TODO
 
-1. Setup VM on Cloud with public access and spin two containers/servers (MariaDB + Mongo) - DONE
+1. Setup VM on Cloud/Docker with public access and spin two containers/servers (MariaDB + Mongo) - DONE
 
     Connection:
 
@@ -19,6 +19,13 @@ Comparison of the MongoDB and MariaDB engines by performance
         ```shell
         mongosh
         ```
+
+    * Docker compose
+
+          ```shell
+          cd path/to/docker-compose
+          docker compose up
+          ```
 
 2. Import data from csvs - TODO
 
