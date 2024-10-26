@@ -1,40 +1,10 @@
-# DB-engine-comparison
+# Database engine comperasion
 
-Comparison of the MongoDB and MariaDB engines by performance  
+This repositopry contains project witch compared two different database engines - MongoDB and MariaDB.
 
-## TODO
+## Test description
 
-1. Setup VM on Cloud/Docker with public access and spin two containers/servers (MariaDB + Mongo) - DONE
+Comperasion between relational and document database engines.
+The test had to check performance of the engiens based on same datasets and similar queries.
 
-    Connection:
-
-    * MariaDB
-
-        ```shell
-        sudo mariadb --user=root --password=
-        ```
-
-    * MongoDB
-
-        ```shell
-        mongosh
-        ```
-
-    * Docker compose
-
-          ```shell
-          cd path/to/docker-compose
-          docker compose up
-          docker ps -a # look the state and id of continers
-          docker exec -it bash id-of-container
-          ```
-
-2. Import data from csvs - TODO
-
-3. Opis -> setup explanation
-
-4. compare usage of resources - ????
-
-5. create excel
-
-6. create paper
+All further insides are inside `./Tests` folder

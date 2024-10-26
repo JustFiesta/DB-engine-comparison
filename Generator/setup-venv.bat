@@ -22,5 +22,24 @@ if exist ".venv\Scripts\activate.bat" (
 echo Aktywowanie środowiska wirtualnego...
 call .venv\Scripts\activate.bat
 
-:: Informacja o aktywacji środowiska
-echo Środowisko wirtualne .venv jest aktywne.
+:: Instalacja zależności
+echo Instalacja zależności...
+pip install --upgrade pip
+pip install faker pandas
+
+:: Sprawdzenie instalacji zależności
+if %errorlevel% neq 0 (
+    echo Nie udalo sie zainstalować zależności.
+    exit /b 1
+) else (
+    echo Zależności zostały zainstalowane pomyślnie.
+)
+
+:: Uruchomienie skryptu Pythona
+echo Uruchamianie skryptu do generowania danych...
+python generate_data.py
+
+:: Dezaktywacja środowiska wirtualnego
+deactivate
+
+echo Skrypt zakończył działanie.

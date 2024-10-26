@@ -22,5 +22,24 @@ fi
 echo "Aktywowanie środowiska wirtualnego..."
 source .venv/bin/activate
 
-# Informacja o aktywacji środowiska
-echo "Środowisko wirtualne .venv jest aktywne."
+# Instalacja zależności
+echo "Instalacja zależności..."
+pip install --upgrade pip
+pip install faker pandas
+
+# Sprawdzenie instalacji zależności
+if [ $? -eq 0 ]; then
+    echo "Zależności zostały zainstalowane pomyślnie."
+else
+    echo "Nie udało się zainstalować zależności."
+    exit 1
+fi
+
+# Uruchomienie skryptu Pythona
+echo "Uruchamianie skryptu do generowania danych..."
+python3 generate_data.py
+
+# Dezaktywacja środowiska wirtualnego
+deactivate
+
+echo "Skrypt zakończył działanie."
