@@ -25,7 +25,7 @@ source .venv/bin/activate
 # Instalacja zależności
 echo "Instalacja zależności..."
 pip install --upgrade pip
-pip install faker pandas
+pip install faker pandas random
 
 # Sprawdzenie instalacji zależności
 if [ $? -eq 0 ]; then
