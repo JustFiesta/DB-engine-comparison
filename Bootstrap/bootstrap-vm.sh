@@ -75,6 +75,7 @@ echo "======================================================="
 echo "Verifying MongoDB and Docker installation..."
 mongod --version
 docker --version
+mariadb --version
 
 echo ""
 echo "======================================================="
