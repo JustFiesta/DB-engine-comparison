@@ -54,7 +54,7 @@ echo ""
 echo "======================================================="
 echo "Installing Packages..."
 sudo apt-get update -y
-sudo apt-get install -y zip mariadb-server mongodb-org docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo apt-get install -y zip mariadb-server mongodb-org docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin python3.12-venv
 
 # Enable and start Docker service
 echo ""
