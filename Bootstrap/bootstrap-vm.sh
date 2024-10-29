@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# This script installs MongoDB and Docker on Ubuntu 24.04 LTS
+# This script installs MongoDB, MariaDB and Docker on Ubuntu 24.04 LTS
 
 # Update system packages
 echo ""
