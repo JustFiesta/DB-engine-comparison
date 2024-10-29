@@ -2,6 +2,8 @@
 # This script installs MongoDB and Docker on Ubuntu 24.04 LTS
 
 # Update system packages
+echo ""
+echo "======================================================="
 echo "Updating system packages..."
 sudo apt-get update -y
 sudo apt-get upgrade -y
@@ -13,6 +15,8 @@ sudo apt-get install -y ca-certificates curl gnupg lsb-release
 # --------------------------------
 # Installing MongoDB Repo
 # --------------------------------
+echo ""
+echo "======================================================="
 echo "Adding MongoDB repository and key..."
 
 # Import MongoDB public GPG key
@@ -26,6 +30,8 @@ echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-8.0.gp
 # --------------------------------
 # Installing Docker Repo
 # --------------------------------
+echo ""
+echo "======================================================="
 echo "Adding Docker repository and key..."
 
 # Add Docker’s official GPG key
@@ -44,22 +50,32 @@ echo \
 # Installing packages
 # --------------------------------
 # Update apt and install packages
+echo ""
+echo "======================================================="
 echo "Installing Packages..."
 sudo apt-get update -y
 sudo apt-get install -y zip mariadb-server mongodb-org docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
 # Enable and start Docker service
+echo ""
+echo "======================================================="
 echo "Enabling and starting Docker service..."
 sudo systemctl start docker
 sudo systemctl enable docker
 # Enable and start MongoDB service
+echo ""
+echo "======================================================="
 echo "Enabling and starting MongoDB service..."
 sudo systemctl start mongod
 sudo systemctl enable mongod
 
 # Verify installations
+echo ""
+echo "======================================================="
 echo "Verifying MongoDB and Docker installation..."
 mongod --version
 docker --version
 
+echo ""
+echo "======================================================="
 echo "MongoDB and Docker have been installed successfully!"
