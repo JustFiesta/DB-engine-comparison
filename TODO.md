@@ -26,7 +26,7 @@ Comparison of the MongoDB and MariaDB engines by performance
           cd path/to/docker-compose
           docker compose up
           docker ps -a # look the state and id of continers
-          docker exec -it bash id-of-container
+          docker exec -it bash id-of-container # connect to container
           ```
 
 2. Import data from csvs - TODO
