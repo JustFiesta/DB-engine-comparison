@@ -85,4 +85,4 @@ mariadb --version
 
 echo ""
 echo "======================================================="
-echo "MongoDB and Docker have been installed successfully!"
+echo "MongoDB, MariDB and Docker have been installed successfully!"
