@@ -62,6 +62,12 @@ echo "======================================================="
 echo "Enabling and starting Docker service..."
 sudo systemctl start docker
 sudo systemctl enable docker
+
+echo "Adding user do docker group"
+sudo groupadd docker
+sudo usermod -aG docker $USER
+newgrp docker
+
 # Enable and start MongoDB service
 echo ""
 echo "======================================================="
