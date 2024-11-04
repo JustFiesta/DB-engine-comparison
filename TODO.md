@@ -29,9 +29,9 @@ Comparison of the MongoDB and MariaDB engines by performance
           docker exec -it bash id-of-container # connect to container
           ```
 
-2. Import data from csvs - TODO
+2. Import data from csvs - DONE
 
-3. Opis -> setup explanation
+3. Setup explanation - DONE
 
 4. compare usage of resources - ????
 
