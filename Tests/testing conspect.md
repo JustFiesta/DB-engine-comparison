@@ -10,8 +10,6 @@ Testy wydajnościowe (Performance Tests):
 Użyj różnych zapytań, aby ocenić wydajność indeksów, wyszukiwań, agregacji itp.
 Testy skalowalności (Scalability Tests):
 
-* Zbadaj, jak silniki radzą sobie z rosnącą ilością danych i obciążenia.
-Oceń, jak efektywnie można dodawać węzły w MongoDB w porównaniu do replikacji w MariaDB.
 
 ## Metryki do porównania
 
