@@ -66,21 +66,29 @@ def test_mongodb_query():
         client = MongoClient('mongodb://localhost:27017/')
         db = client['Airports']
         collection = db['Flights']
-        query = {"ARRIVAL_DELAY": {"$gt": 60}}  
-        start_time = time.time()
+        query = {"ARRIVAL_DELAY": {"$gt": 60}}  # Przykład zapytania
 
-        result = list(collection.find(query))
+        # Ograniczenie liczby wyników, aby sprawdzić tylko część danych
+        start_time = time.time()
+        
+        result = list(collection.find(query))  # Pobierz tylko 100 wyników
+        if not result:
+            print("No results found.")
+        else:
+            print(f"Found {len(result)} results.")
         
         end_time = time.time()
         query_time = end_time - start_time
+        print(f"Query executed in {query_time} seconds.")
         
         client.close()
 
         return query_time
 
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error while querying MongoDB: {e}")
         return None
+
 
 def save_to_csv(data, filename="system_stats.csv"):
     """Funkcja zapisująca wyniki do pliku CSV"""
@@ -98,7 +106,7 @@ def test_database_performance():
     i zapisuje wynik w pliku CSV.
     """
     # Testowanie MariaDB
-    mariadb_query_time = test_mariadb_query()
+    #mariadb_query_time = test_mariadb_query()
 
     # Testowanie MongoDB
     mongodb_query_time = test_mongodb_query()
@@ -107,7 +115,7 @@ def test_database_performance():
     system_stats = collect_system_stats()
     
     # Dodanie danych do statystyk
-    system_stats['mariadb_query_time'] = mariadb_query_time
+    #system_stats['mariadb_query_time'] = mariadb_query_time
     system_stats['mongodb_query_time'] = mongodb_query_time
     system_stats['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
 
