@@ -30,7 +30,7 @@ def test_mariadb_query():
             database='Airports'
         )
         cursor = conn.cursor()
-        query = "SELECT * FROM Flights WHERE ARRIVAL_DELAY > 60;"  
+        query = "SELECT * FROM Flights WHERE AIRLINE_DELAY > 60;"  
         start_time = time.time()
 
         cursor.execute(query)
