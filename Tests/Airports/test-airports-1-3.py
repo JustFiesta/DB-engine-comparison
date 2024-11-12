@@ -63,7 +63,7 @@ def test_mongodb_query():
     try:
         client = MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=5000)
         db = client['Airports']
-        collection = db['Airlines']
+        collection = db['Airports']
         
         query = { "STATE": "CA" } 
         projection = { "AIRPORT": 1, "CITY": 1, "_id": 0 }  
@@ -75,9 +75,9 @@ def test_mongodb_query():
         cursor = collection.find(query, projection)
         all_results = []
 
-        for doc in cursor:
-            all_results.append(doc)  
-            print(f"Fetched airline: {doc['AIRLINE']}")  
+        #for doc in cursor:
+        #    all_results.append(doc)  
+        #    print(f"Fetched airline: {doc['AIRLINE']}")  
 
         end_time = time.time()
         query_time = end_time - start_time

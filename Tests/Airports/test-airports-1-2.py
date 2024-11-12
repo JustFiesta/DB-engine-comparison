@@ -30,14 +30,13 @@ def test_mariadb_query():
             database='Airports'
         )
         cursor = conn.cursor()
-        query = "SELECT AIRLINE FROM Airlines WHERE IATA_CODE = 'AA';"  # Przykład zapytania
+        query = "SELECT AIRLINE FROM Airlines WHERE IATA_CODE = 'AA';" 
         start_time = time.time()
 
         print("MariaDB: Executing query...")
         cursor.execute(query)
         
-        # Zamiast fetchall(), użyj fetchmany()
-        result = cursor.fetchmany(100)  # Pobiera 100 wierszy na raz
+        result = cursor.fetchmany(100)  
         while result:
             print(f"Fetched {len(result)} rows")
             result = cursor.fetchmany(100)
