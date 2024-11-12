@@ -30,7 +30,7 @@ def test_mariadb_query():
             database='Airports'
         )
         cursor = conn.cursor()
-        query = "SELECT CANCELLATION_REASON, COUNT(*) AS cancel_count FROM Flights GROUP BY CANCELLATION_REASON;"
+        query = "SELECT CANCELLATION_REASON, COUNT(*) AS cancel_count FROM Flights WHERE CANCELLED = 1 GROUP BY CANCELLATION_REASON;"
 
         start_time = time.time()
 
