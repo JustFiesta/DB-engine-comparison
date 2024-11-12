@@ -25,19 +25,26 @@ def test_mariadb_query():
     try:
         conn = mysql.connector.connect(
             host='localhost',
-            user='mariadb',  
+            user='mariadb',
             password='P@ssw0rd',
             database='Airports'
         )
         cursor = conn.cursor()
-        query = "SELECT * FROM Flights WHERE AIRLINE_DELAY > 60;"  
+        query = "SELECT * FROM Flights WHERE AIRLINE_DELAY > 60;"  # Przykład zapytania
         start_time = time.time()
 
+        print("Executing query...")
         cursor.execute(query)
-        result = cursor.fetchall()
+        
+        # Zamiast fetchall(), użyj fetchmany()
+        result = cursor.fetchmany(100)  # Pobiera 100 wierszy na raz
+        while result:
+            print(f"Fetched {len(result)} rows")
+            result = cursor.fetchmany(100)
 
         end_time = time.time()
         query_time = end_time - start_time
+        print(f"Query executed in {query_time} seconds.")
         
         cursor.close()
         conn.close()
@@ -45,8 +52,13 @@ def test_mariadb_query():
         return query_time
         
     except mysql.connector.Error as err:
-        print(f"Error: {err}")
+        print(f"MariaDB Error: {err}")
         return None
+
+    except Exception as e:
+        print(f"General error: {e}")
+        return None
+
 
 def test_mongodb_query():
     """Funkcja do testowania zapytań w MongoDB"""
