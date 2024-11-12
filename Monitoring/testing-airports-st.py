@@ -1,145 +1,107 @@
-import threading
 import time
 import psutil
-from pymongo import MongoClient
 import mysql.connector
-from concurrent.futures import ThreadPoolExecutor
+from pymongo import MongoClient
+import csv
 
-# Połączenie z MongoDB
-client_mongo = MongoClient("mongodb://localhost:27017/")
-db_mongo = client_mongo['Airports']
-
-# Połączenie z MariaDB
-conn_mariadb = mysql.connector.connect(
-    host="localhost",
-    user="mariadb",
-    password="P@ssw0rd",
-    database="Airports"
-)
-cursor_mariadb = conn_mariadb.cursor()
-
-
-# Funkcja monitorująca zasoby podczas zapytania
-def monitoruj_zasoby(pid, monitoring_aktywny):
-    proces = psutil.Process(pid)
-    metryki = []
-
-    while monitoring_aktywny[0]:  # Użycie listy, aby zaktualizować wartość z funkcji wywołującej
-        cpu_usage = proces.cpu_percent(interval=1)
-        ram_usage = proces.memory_info().rss / (1024 * 1024)  # W MB
-        io_counters = proces.io_counters()
-        open_files = len(proces.open_files())
-        metryki.append({
-            "cpu": cpu_usage,
-            "ram": ram_usage,
-            "read_bytes": io_counters.read_bytes,
-            "write_bytes": io_counters.write_bytes,
-            "open_files": open_files
-        })
-        time.sleep(1)
-    return metryki
-
-
-# Funkcja zbierająca końcowe metryki po zakończeniu zapytania
-def zbierz_metryki_koncowe(proces):
-    metryki_koncowe = {
-        "cpu": proces.cpu_percent(),
-        "ram": proces.memory_info().rss / (1024 * 1024),  # W MB
-        "open_files": len(proces.open_files()),
-        "io_counters": proces.io_counters()
+def collect_system_stats():
+    """Funkcja zbierająca statystyki systemowe, w tym użycie dysku"""
+    process = psutil.Process()
+    stats = {
+        'cpu_percent': psutil.cpu_percent(interval=1),
+        'memory_percent': psutil.virtual_memory().percent,
+        'read_bytes': process.io_counters().read_bytes,
+        'write_bytes': process.io_counters().write_bytes,
+        'open_files': len(process.open_files()),
+        'disk_usage_percent': psutil.disk_usage('/').percent, 
+        'disk_total': psutil.disk_usage('/').total,             
+        'disk_used': psutil.disk_usage('/').used,             
+        'disk_free': psutil.disk_usage('/').free                
     }
-    return metryki_koncowe
+    return stats
 
-
-# Funkcja wykonująca zapytanie w MongoDB
-def wykonaj_zapytanie_mongo(collection, query):
-    monitoring_aktywny_mongo = [True]  # Lista do przekazania jako referencja
-    pid = client_mongo.admin.command('serverStatus')['pid']  # Pobranie PID MongoDB
-    proces = psutil.Process(pid)
-
-    # Uruchomienie monitoringu zasobów w osobnym wątku
-    monitoring_thread = threading.Thread(target=monitoruj_zasoby, args=(pid, monitoring_aktywny_mongo))
-    monitoring_thread.start()
-
-    # Wykonanie zapytania
-    start_time = time.time()
-    result = db_mongo[collection].find(query).explain("executionStats")
-    end_time = time.time()
-
-    # Zakończenie monitoringu
-    monitoring_aktywny_mongo[0] = False  # Zatrzymanie pętli w monitorującym wątku
-    monitoring_thread.join()
-
-    # Zbieranie końcowych metryk
-    metryki_koncowe = zbierz_metryki_koncowe(proces)
-    czas_wykonania = end_time - start_time
-
-    print("\n--- MongoDB ---")
-    print("Czas wykonania zapytania:", czas_wykonania, "s")
-    print("Wynik explain:", result)
-    print("Końcowe metryki:", metryki_koncowe)
-    return czas_wykonania, metryki_koncowe
-
-
-# Funkcja wykonująca zapytanie w MariaDB
-def wykonaj_zapytanie_mariadb(query):
-    monitoring_aktywny_mariadb = [True]  # Lista do przekazania jako referencja
-    pid = conn_mariadb.connection_id  # Pobiera PID MariaDB
-    proces = psutil.Process(pid)
-
-    # Uruchomienie monitoringu zasobów w osobnym wątku
-    with ThreadPoolExecutor() as executor:
-        monitor_task = executor.submit(monitoruj_zasoby, pid, monitoring_aktywny_mariadb)
+def test_mariadb_query():
+    """Funkcja do testowania zapytań w MariaDB"""
+    try:
+        conn = mysql.connector.connect(
+            host='localhost',
+            user='mariadb',  
+            password='P@ssw0rd',
+            database='Airports'
+        )
+        cursor = conn.cursor()
+        query = "SELECT * FROM flights WHERE ARRIVAL_DELAY > 60;"  
         start_time = time.time()
 
-        # Wykonanie zapytania
-        cursor_mariadb.execute(query)
-        result = cursor_mariadb.fetchall()
+        cursor.execute(query)
+        result = cursor.fetchall()
 
         end_time = time.time()
-        czas_wykonania = end_time - start_time
+        query_time = end_time - start_time
+        
+        cursor.close()
+        conn.close()
 
-        # Zakończenie monitoringu
-        monitoring_aktywny_mariadb[0] = False  # Zatrzymanie pętli w monitorującym wątku
-        metryki_w_trakcie = monitor_task.result()
-        metryki_koncowe = zbierz_metryki_koncowe(proces)
+        return query_time
+        
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+        return None
 
-    print("\n--- MariaDB ---")
-    print("Czas wykonania zapytania:", czas_wykonania, "s")
-    print("Wynik zapytania:", result)
-    print("Zebrane metryki podczas zapytania:", metryki_w_trakcie)
-    print("Końcowe metryki:", metryki_koncowe)
+def test_mongodb_query():
+    """Funkcja do testowania zapytań w MongoDB"""
+    try:
+        client = MongoClient('mongodb://localhost:27017/')
+        db = client['Airports']
+        collection = db['Flights']
+        query = {"ARRIVAL_DELAY": {"$gt": 60}}  
+        start_time = time.time()
 
-    return czas_wykonania, metryki_koncowe
+        result = list(collection.find(query))
+        
+        end_time = time.time()
+        query_time = end_time - start_time
+        
+        client.close()
 
+        return query_time
 
-# Funkcja główna
-def main():
-    # Przykładowe zapytanie do MongoDB
-    mongo_query = {"ARRIVAL_DELAY": {"$gt": 60}}
-    mongo_czas, mongo_metryki = wykonaj_zapytanie_mongo("flights", mongo_query)
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
 
-    # Przykładowe zapytanie do MariaDB
-    mariadb_query = "SELECT * FROM flights WHERE ARRIVAL_DELAY > 60;"  
-    mariadb_czas, mariadb_metryki = wykonaj_zapytanie_mariadb(mariadb_query)
+def save_to_csv(data, filename="system_stats.csv"):
+    """Funkcja zapisująca wyniki do pliku CSV"""
+    with open(filename, mode='a', newline='') as file:
+        writer = csv.DictWriter(file, fieldnames=data.keys())
+        # Jeśli plik jest pusty, dodaj nagłówki
+        if file.tell() == 0:
+            writer.writeheader()
+        writer.writerow(data)
 
-    # Porównanie wyników
-    print("\n--- Porównanie wyników ---")
-    print(f"Czas wykonania MongoDB: {mongo_czas:.2f} s")
-    print(f"Czas wykonania MariaDB: {mariadb_czas:.2f} s")
+def test_database_performance():
+    """
+    Funkcja do jednorazowego testowania wydajności bazy danych.
+    Wykonuje zapytania do baz danych, zbiera statystyki systemowe
+    i zapisuje wynik w pliku CSV.
+    """
+    # Testowanie MariaDB
+    mariadb_query_time = test_mariadb_query()
 
-    if mongo_czas < mariadb_czas:
-        print("MongoDB było szybsze.")
-    elif mariadb_czas < mongo_czas:
-        print("MariaDB było szybsze.")
-    else:
-        print("Oba zapytania miały taki sam czas wykonania.")
+    # Testowanie MongoDB
+    mongodb_query_time = test_mongodb_query()
 
-    print("\n--- Porównanie końcowych metryk ---")
-    print("MongoDB metryki:", mongo_metryki)
-    print("MariaDB metryki:", mariadb_metryki)
+    # Zbieranie statystyk systemowych
+    system_stats = collect_system_stats()
+    
+    # Dodanie danych do statystyk
+    system_stats['mariadb_query_time'] = mariadb_query_time
+    system_stats['mongodb_query_time'] = mongodb_query_time
+    system_stats['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
 
+    # Zapisanie danych do pliku CSV
+    save_to_csv(system_stats)
 
-# Uruchomienie funkcji głównej
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    # Jednorazowe testowanie wydajności
+    test_database_performance()
