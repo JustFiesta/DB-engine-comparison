@@ -30,7 +30,7 @@ def test_mariadb_query():
             database='Airports'
         )
         cursor = conn.cursor()
-        query = "SELECT DAY_OF_WEEK, AVG(ARRIVAL_DELAY) AS avg_arrival_delay FROM flights GROUP BY DAY_OF_WEEK;"
+        query = "SELECT DAY_OF_WEEK, AVG(ARRIVAL_DELAY) AS avg_arrival_delay FROM Flights GROUP BY DAY_OF_WEEK;"
 
         start_time = time.time()
 
@@ -66,7 +66,6 @@ def test_mongodb_query():
         client = MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=5000)
         db = client['Airports']
         collection = db['Flights']  
-        print("MongoDB: Executing query...")
 
         pipeline = [
             {
@@ -77,6 +76,8 @@ def test_mongodb_query():
             }
         ]
 
+        print("MongoDB: Executing query...")
+
         start_time = time.time()
 
         cursor = collection.aggregate(pipeline)
@@ -84,6 +85,7 @@ def test_mongodb_query():
 
         for doc in cursor:
             all_results.append(doc)  
+            #print(f"Day of Week: {doc['_id']}, Average Arrival Delay: {doc['avg_arrival_delay']}")
 
         end_time = time.time()
         query_time = end_time - start_time
@@ -96,6 +98,7 @@ def test_mongodb_query():
     except Exception as e:
         print(f"Error: {e}")
         return None
+
 
 def save_to_csv(data, filename="system_stats.csv"):
     """Funkcja zapisująca wyniki do pliku CSV"""
