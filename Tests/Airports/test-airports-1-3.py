@@ -33,7 +33,7 @@ def test_mariadb_query():
         query = "SELECT AIRPORT, CITY FROM airports WHERE STATE = 'CA';"  
         start_time = time.time()
 
-        print("Executing query...")
+        print("MariaDB: Executing query...")
         cursor.execute(query)
         
         result = cursor.fetchmany(100)  
@@ -69,6 +69,8 @@ def test_mongodb_query():
         projection = { "AIRPORT": 1, "CITY": 1, "_id": 0 }  
 
         start_time = time.time()
+        
+        print("MongoDB: Executing query...")
 
         cursor = collection.find(query, projection)
         all_results = []

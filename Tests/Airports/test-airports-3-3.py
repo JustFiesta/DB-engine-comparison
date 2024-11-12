@@ -34,7 +34,7 @@ def test_mariadb_query():
 
         start_time = time.time()
 
-        print("Executing query...")
+        print("MariaDB: Executing query...")
         cursor.execute(query)
         
         
@@ -66,6 +66,7 @@ def test_mongodb_query():
         client = MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=5000)
         db = client['Airports']
         collection = db['Flights']  
+        print("MongoDB: Executing query...")
 
         pipeline = [
             {

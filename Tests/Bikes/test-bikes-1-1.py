@@ -27,16 +27,14 @@ def test_mariadb_query():
             host='localhost',
             user='mariadb',
             password='P@ssw0rd',
-            database='Airports'
+            database='Bikes'
         )
         cursor = conn.cursor()
-        query = "SELECT * FROM flights f1 WHERE ARRIVAL_DELAY = ( SELECT MAX(ARRIVAL_DELAY) FROM flights f2 WHERE f1.YEAR = f2.YEAR AND f1.MONTH = f2.MONTH AND f1.DAY = f2.DAY );"
-
+        query = "SELECT * FROM TripUsers WHERE tripduration > 30 * 60;"  
         start_time = time.time()
 
         print("MariaDB: Executing query...")
         cursor.execute(query)
-        
         
         result = cursor.fetchmany(100)  
         while result:
@@ -64,45 +62,21 @@ def test_mongodb_query():
     """Funkcja do testowania zapytań w MongoDB"""
     try:
         client = MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=5000)
-        db = client['Airports']
-        collection = db['Flights']  
+        db = client['Bikes']
+        collection = db['Airlines']
+        
+        query = { "STATE": "CA" } 
+        projection = { "AIRPORT": 1, "CITY": 1, "_id": 0 }  
+
+        start_time = time.time()
         print("MongoDB: Executing query...")
 
-        pipeline = [
-            {
-                "$group": {
-                    "_id": {"year": "$YEAR", "month": "$MONTH", "day": "$DAY"},
-                    "max_delay": {"$max": "$ARRIVAL_DELAY"}
-                }
-            },
-            {
-                "$lookup": {
-                    "from": "flights",
-                    "localField": "max_delay",
-                    "foreignField": "ARRIVAL_DELAY",
-                    "as": "max_delay_flights"
-                }
-            },
-            {"$unwind": "$max_delay_flights"},
-            {
-                "$match": {
-                    "$expr": {
-                        "$and": [
-                            {"$eq": ["$_id.year", "$max_delay_flights.YEAR"]},
-                            {"$eq": ["$_id.month", "$max_delay_flights.MONTH"]},
-                            {"$eq": ["$_id.day", "$max_delay_flights.DAY"]}
-                        ]
-                    }
-                }
-            }
-        ]
-        start_time = time.time()
-
-        cursor = collection.aggregate(pipeline)
+        cursor = collection.find(query, projection)
         all_results = []
 
         for doc in cursor:
             all_results.append(doc)  
+            print(f"Fetched airline: {doc['AIRLINE']}")  
 
         end_time = time.time()
         query_time = end_time - start_time
@@ -115,6 +89,7 @@ def test_mongodb_query():
     except Exception as e:
         print(f"Error: {e}")
         return None
+
 
 def save_to_csv(data, filename="system_stats.csv"):
     """Funkcja zapisująca wyniki do pliku CSV"""
@@ -131,10 +106,10 @@ def test_database_performance():
     i zapisuje wynik w pliku CSV.
     """
     # Testowanie MariaDB
-    mariadb_query_time = test_mariadb_query() 
+    mariadb_query_time = test_mariadb_query()  
 
     # Testowanie MongoDB
-    mongodb_query_time = test_mongodb_query()  
+    mongodb_query_time = test_mongodb_query() 
 
     # Zbieranie statystyk systemowych
     system_stats = collect_system_stats()
@@ -142,7 +117,6 @@ def test_database_performance():
     # Dodanie danych do statystyk
     system_stats['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
 
-    # Dodanie nazw silników baz danych do wyników
     if mariadb_query_time is not None:
         system_stats['database'] = 'MariaDB'
         system_stats['query_time'] = mariadb_query_time

@@ -33,7 +33,7 @@ def test_mariadb_query():
         query = "SELECT * FROM Flights WHERE AIRLINE_DELAY > 60;"  # Przykład zapytania
         start_time = time.time()
 
-        print("Executing query...")
+        print("MariaDB: Executing query...")
         cursor.execute(query)
         
         # Zamiast fetchall(), użyj fetchmany()
@@ -67,6 +67,8 @@ def test_mongodb_query():
         collection = db['Flights']
         query = {"ARRIVAL_DELAY": {"$gt": 60}}  # Możesz dostosować zapytanie do swoich potrzeb
         start_time = time.time()
+
+        print("MongoDB: Executing query...")
 
         # Wczytywanie wszystkich wyników, iterując przez kursor
         cursor = collection.find(query)  # Pobiera wszystkie wyniki bez limitu
