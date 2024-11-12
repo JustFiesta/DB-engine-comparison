@@ -90,9 +90,6 @@ def test_mongodb_query():
         print(f"Error: {e}")
         return None
 
-
-
-
 def save_to_csv(data, filename="system_stats.csv"):
     """Funkcja zapisująca wyniki do pliku CSV"""
     with open(filename, mode='a', newline='') as file:
@@ -109,21 +106,27 @@ def test_database_performance():
     i zapisuje wynik w pliku CSV.
     """
     # Testowanie MariaDB
-    #mariadb_query_time = test_mariadb_query()
+    mariadb_query_time = test_mariadb_query()  # Testujemy MariaDB
 
     # Testowanie MongoDB
-    mongodb_query_time = test_mongodb_query()
+    mongodb_query_time = test_mongodb_query()  # Testujemy MongoDB
 
     # Zbieranie statystyk systemowych
     system_stats = collect_system_stats()
     
     # Dodanie danych do statystyk
-    #system_stats['mariadb_query_time'] = mariadb_query_time
-    system_stats['mongodb_query_time'] = mongodb_query_time
     system_stats['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
 
-    # Zapisanie danych do pliku CSV
-    save_to_csv(system_stats)
+    # Dodanie nazw silników baz danych do wyników
+    if mariadb_query_time is not None:
+        system_stats['database'] = 'MariaDB'
+        system_stats['query_time'] = mariadb_query_time
+        save_to_csv(system_stats)
+
+    if mongodb_query_time is not None:
+        system_stats['database'] = 'MongoDB'
+        system_stats['query_time'] = mongodb_query_time
+        save_to_csv(system_stats)
 
 if __name__ == '__main__':
     # Jednorazowe testowanie wydajności
