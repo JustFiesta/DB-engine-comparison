@@ -66,18 +66,17 @@ def test_mongodb_query():
         collection = db['Airports']
         
         query = { "STATE": "CA" } 
-        #projection = { "AIRPORT": 1, "CITY": 1, "_id": 0 }  
+        projection = { "AIRPORT": 1, "CITY": 1, "_id": 0 }  
 
         start_time = time.time()
 
         print("MongoDB: Executing query...")
 
-        #cursor = collection.find(query, projection)
+        cursor = collection.find(query, projection)
         all_results = []
 
-        #for doc in cursor:
-        #    all_results.append(doc)  
-        #    print(f"Fetched airline: {doc['AIRLINE']}")  
+        for doc in cursor:
+            all_results.append(doc) 
 
         end_time = time.time()
         query_time = end_time - start_time
