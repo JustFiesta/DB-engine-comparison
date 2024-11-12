@@ -68,7 +68,8 @@ def wykonaj_zapytanie_mongo(collection, query):
 
     # Wykonanie zapytania
     start_time = time.time()
-    result = db_mongo[collection].find(query).explain("executionStats")
+    # result = db_mongo[collection].find(query).explain("executionStats")
+    result = db_mongo[collection].find(query).explain()
     end_time = time.time()
 
     # Zakończenie monitoringu
