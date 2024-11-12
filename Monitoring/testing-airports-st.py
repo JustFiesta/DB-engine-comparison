@@ -17,7 +17,7 @@ db_mongo = client_mongo['Airports']
 conn_mariadb = mysql.connector.connect(
     host="localhost",
     user="mariadb",
-    password="",
+    password="P@ssw0rd",
     database="Airports"
 )
 cursor_mariadb = conn_mariadb.cursor()
