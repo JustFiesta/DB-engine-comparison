@@ -70,7 +70,7 @@ def test_mongodb_query():
 
         # Dodaj wyjątek, aby lepiej złapać błędy
         try:
-            result = list(collection.find(query).limit(100))  # Pobieranie tylko 100 wyników
+            result = list(collection.find(query))  # Pobieranie tylko 100 wyników
         except Exception as e:
             print(f"Błąd podczas wykonywania zapytania MongoDB: {e}")
             return None
