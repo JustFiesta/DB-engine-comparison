@@ -71,7 +71,7 @@ def test_mongodb_query():
         pipeline = [
             {
         "$lookup": {
-            "from": "airlines",
+            "from": "Airlines",
             "localField": "AIRLINE",        
             "foreignField": "IATA_CODE",    
             "as": "airline_info"
