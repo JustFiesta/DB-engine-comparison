@@ -59,35 +59,32 @@ def test_mariadb_query():
         print(f"General error: {e}")
         return None
 
-
 def test_mongodb_query():
     """Funkcja do testowania zapytań w MongoDB"""
     try:
-        client = MongoClient('mongodb://localhost:27017/')
+        client = MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=5000)
         db = client['Airports']
         collection = db['Flights']
-        query = {"ARRIVAL_DELAY": {"$gt": 60}}  # Przykład zapytania
-
-        # Ograniczenie liczby wyników, aby sprawdzić tylko część danych
+        query = {"ARRIVAL_DELAY": {"$gt": 60}}  
         start_time = time.time()
-        
-        result = list(collection.find(query))  # Pobierz tylko 100 wyników
-        if not result:
-            print("No results found.")
-        else:
-            print(f"Found {len(result)} results.")
+
+        # Dodaj wyjątek, aby lepiej złapać błędy
+        try:
+            result = list(collection.find(query).limit(100))  # Pobieranie tylko 100 wyników
+        except Exception as e:
+            print(f"Błąd podczas wykonywania zapytania MongoDB: {e}")
+            return None
         
         end_time = time.time()
         query_time = end_time - start_time
-        print(f"Query executed in {query_time} seconds.")
-        
         client.close()
 
         return query_time
 
     except Exception as e:
-        print(f"Error while querying MongoDB: {e}")
+        print(f"Error: {e}")
         return None
+
 
 
 def save_to_csv(data, filename="system_stats.csv"):
