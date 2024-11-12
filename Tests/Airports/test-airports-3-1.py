@@ -30,7 +30,7 @@ def test_mariadb_query():
             database='Airports'
         )
         cursor = conn.cursor()
-        query = "SELECT a.AIRLINE, COUNT(f.FLIGHT_NUMBER) AS flight_count FROM flights f JOIN airlines a ON f.AIRLINE = a.IATA_CODE GROUP BY a.AIRLINE;"
+        query = "SELECT a.AIRLINE, COUNT(f.FLIGHT_NUMBER) AS flight_count FROM Flights f JOIN Airlines a ON f.AIRLINE = a.IATA_CODE GROUP BY a.AIRLINE;"
 
         start_time = time.time()
 

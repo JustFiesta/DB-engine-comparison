@@ -30,7 +30,7 @@ def test_mariadb_query():
             database='Airports'
         )
         cursor = conn.cursor()
-        query = "SELECT AIRPORT, CITY FROM airports WHERE STATE = 'CA';"  
+        query = "SELECT AIRPORT, CITY FROM Airports WHERE STATE = 'CA';"  
         start_time = time.time()
 
         print("MariaDB: Executing query...")
@@ -69,7 +69,7 @@ def test_mongodb_query():
         projection = { "AIRPORT": 1, "CITY": 1, "_id": 0 }  
 
         start_time = time.time()
-        
+
         print("MongoDB: Executing query...")
 
         cursor = collection.find(query, projection)

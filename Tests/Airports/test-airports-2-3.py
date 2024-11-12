@@ -30,7 +30,7 @@ def test_mariadb_query():
             database='Airports'
         )
         cursor = conn.cursor()
-        query = "SELECT YEAR, MONTH, DAY, COUNT(*) AS flight_count FROM flights WHERE AIRLINE = 'UA' GROUP BY YEAR, MONTH, DAY;"
+        query = "SELECT YEAR, MONTH, DAY, COUNT(*) AS flight_count FROM Flights WHERE AIRLINE = 'UA' GROUP BY YEAR, MONTH, DAY;"
 
         start_time = time.time()
 

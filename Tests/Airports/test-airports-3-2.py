@@ -30,7 +30,7 @@ def test_mariadb_query():
             database='Airports'
         )
         cursor = conn.cursor()
-        query = "SELECT flights.FLIGHT_ID, airlines.AIRLINE AS airline_name, origin_airports.AIRPORT AS origin_airport, destination_airports.AIRPORT AS destination_airport, flights.ARRIVAL_DELAY FROM flights JOIN airlines ON flights.AIRLINE = airlines.IATA_CODE JOIN airports AS origin_airports ON flights.ORIGIN_AIRPORT = origin_airports.IATA_CODE JOIN airports AS destination_airports ON flights.DESTINATION_AIRPORT = destination_airports.IATA_CODE WHERE flights.ARRIVAL_DELAY > 100;"
+        query = "SELECT Flights.FLIGHT_ID, Airlines.AIRLINE AS airline_name, origin_airports.AIRPORT AS origin_airport, destination_airports.AIRPORT AS destination_airport, flights.ARRIVAL_DELAY FROM flights JOIN Airlines ON flights.AIRLINE = airlines.IATA_CODE JOIN Airports AS origin_airports ON Flights.ORIGIN_AIRPORT = origin_airports.IATA_CODE JOIN Airports AS destination_airports ON Flights.DESTINATION_AIRPORT = destination_airports.IATA_CODE WHERE Flights.ARRIVAL_DELAY > 100;"
 
         start_time = time.time()
 
