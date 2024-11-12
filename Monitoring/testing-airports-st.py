@@ -5,10 +5,6 @@ from pymongo import MongoClient
 import mysql.connector
 from concurrent.futures import ThreadPoolExecutor
 
-# Zmienne globalne do kontroli monitoringu
-monitoring_aktywny_mongo = True
-monitoring_aktywny_mariadb = True
-
 # Połączenie z MongoDB
 client_mongo = MongoClient("mongodb://localhost:27017/")
 db_mongo = client_mongo['Airports']
@@ -24,12 +20,11 @@ cursor_mariadb = conn_mariadb.cursor()
 
 
 # Funkcja monitorująca zasoby podczas zapytania
-def monitoruj_zasoby(pid, baza):
+def monitoruj_zasoby(pid, monitoring_aktywny):
     proces = psutil.Process(pid)
     metryki = []
-    monitoring_aktywny = monitoring_aktywny_mongo if baza == "MongoDB" else monitoring_aktywny_mariadb
 
-    while monitoring_aktywny:
+    while monitoring_aktywny[0]:  # Użycie listy, aby zaktualizować wartość z funkcji wywołującej
         cpu_usage = proces.cpu_percent(interval=1)
         ram_usage = proces.memory_info().rss / (1024 * 1024)  # W MB
         io_counters = proces.io_counters()
@@ -58,22 +53,21 @@ def zbierz_metryki_koncowe(proces):
 
 # Funkcja wykonująca zapytanie w MongoDB
 def wykonaj_zapytanie_mongo(collection, query):
-    global monitoring_aktywny_mongo
+    monitoring_aktywny_mongo = [True]  # Lista do przekazania jako referencja
     pid = client_mongo.admin.command('serverStatus')['pid']  # Pobranie PID MongoDB
     proces = psutil.Process(pid)
 
     # Uruchomienie monitoringu zasobów w osobnym wątku
-    monitoring_thread = threading.Thread(target=monitoruj_zasoby, args=(pid, "MongoDB"))
+    monitoring_thread = threading.Thread(target=monitoruj_zasoby, args=(pid, monitoring_aktywny_mongo))
     monitoring_thread.start()
 
     # Wykonanie zapytania
     start_time = time.time()
-    # result = db_mongo[collection].find(query).explain("executionStats")
-    result = db_mongo[collection].find(query).explain()
+    result = db_mongo[collection].find(query).explain("executionStats")
     end_time = time.time()
 
     # Zakończenie monitoringu
-    monitoring_aktywny_mongo = False
+    monitoring_aktywny_mongo[0] = False  # Zatrzymanie pętli w monitorującym wątku
     monitoring_thread.join()
 
     # Zbieranie końcowych metryk
@@ -89,13 +83,13 @@ def wykonaj_zapytanie_mongo(collection, query):
 
 # Funkcja wykonująca zapytanie w MariaDB
 def wykonaj_zapytanie_mariadb(query):
-    global monitoring_aktywny_mariadb
+    monitoring_aktywny_mariadb = [True]  # Lista do przekazania jako referencja
     pid = conn_mariadb.connection_id  # Pobiera PID MariaDB
     proces = psutil.Process(pid)
 
     # Uruchomienie monitoringu zasobów w osobnym wątku
     with ThreadPoolExecutor() as executor:
-        monitor_task = executor.submit(monitoruj_zasoby, pid, "MariaDB")
+        monitor_task = executor.submit(monitoruj_zasoby, pid, monitoring_aktywny_mariadb)
         start_time = time.time()
 
         # Wykonanie zapytania
@@ -106,7 +100,7 @@ def wykonaj_zapytanie_mariadb(query):
         czas_wykonania = end_time - start_time
 
         # Zakończenie monitoringu
-        monitoring_aktywny_mariadb = False
+        monitoring_aktywny_mariadb[0] = False  # Zatrzymanie pętli w monitorującym wątku
         metryki_w_trakcie = monitor_task.result()
         metryki_koncowe = zbierz_metryki_koncowe(proces)
 
