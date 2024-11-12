@@ -123,7 +123,7 @@ def wykonaj_zapytanie_mariadb(query):
 def main():
     # Przykładowe zapytanie do MongoDB
     mongo_query = {"ARRIVAL_DELAY": {"$gt": 60}}
-    mongo_czas, mongo_metryki = wykonaj_zapytanie_mongo("kolekcja", mongo_query)
+    mongo_czas, mongo_metryki = wykonaj_zapytanie_mongo("flights", mongo_query)
 
     # Przykładowe zapytanie do MariaDB
     mariadb_query = "SELECT * FROM flights WHERE ARRIVAL_DELAY > 60;"  
