@@ -63,7 +63,7 @@ def test_mariadb_query():
 def test_mongodb_query():
     """Funkcja do testowania zapytań w MongoDB"""
     try:
-        client = MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=5000)
+        client = MongoClient('mongodb://localhost:27017/')
         print("Connected to MongoDB")
 
         db = client['Airports']
@@ -74,19 +74,29 @@ def test_mongodb_query():
             {
                 "$lookup": {
                     "from": "airlines",
-                    "localField": "AIRLINE",
-                    "foreignField": "IATA_CODE",
+                    "localField": "AIRLINE",  # Pole w Flights
+                    "foreignField": "IATA_CODE",  # Powiązane pole w Airlines
                     "as": "airline_info"
                 }
             },
-            { "$unwind": "$airline_info" },
+            {
+                "$unwind": "$airline_info"  # Rozwijamy dane połączone z Airlines
+            },
             {
                 "$group": {
-                    "_id": "$airline_info.AIRLINE",
-                    "flight_count": { "$sum": 1 }
+                    "_id": "$airline_info.AIRLINE",  # Grupujemy według nazwy linii lotniczej
+                    "flight_count": { "$sum": 1 }  # Liczymy liczbę lotów dla każdej linii
+                }
+            },
+            {
+                "$project": {
+                    "_id": 0,
+                    "airline": "$_id",  # Nazwa linii lotniczej
+                    "flight_count": 1   # Liczba lotów
                 }
             }
         ]
+
 
         start_time = time.time()
 
