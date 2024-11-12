@@ -70,22 +70,20 @@ def test_mongodb_query():
 
         pipeline = [
             {
-                "$lookup": {
-                    "from": "airlines",  
-                    "localField": "AIRLINE",  
-                    "foreignField": "IATA_CODE", 
-                    "as": "airline_info"  
-                }
-            },
-            {
-                "$unwind": "$airline_info" 
-            },
-            {
-                "$group": {
-                    "_id": "$airline_info.AIRLINE",  
-                    "flight_count": { "$sum": 1 }  
-                }
+        "$lookup": {
+            "from": "airlines",
+            "localField": "AIRLINE",        
+            "foreignField": "IATA_CODE",    
+            "as": "airline_info"
+        }
+        },
+        { "$unwind": "$airline_info" },
+        {
+            "$group": {
+                "_id": "$airline_info.AIRLINE",
+                "flight_count": { "$sum": 1 }
             }
+        }
         ]
 
         start_time = time.time()
