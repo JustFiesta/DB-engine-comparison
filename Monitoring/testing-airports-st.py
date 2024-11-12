@@ -11,7 +11,7 @@ monitoring_aktywny_mariadb = True
 
 # Połączenie z MongoDB
 client_mongo = MongoClient("mongodb://localhost:27017/")
-db_mongo = client_mongo['Bikes']
+db_mongo = client_mongo['Airports']
 
 # Połączenie z MariaDB
 conn_mariadb = mysql.connector.connect(
