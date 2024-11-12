@@ -89,14 +89,14 @@ def test_database_performance():
     mariadb_query_time = test_mariadb_query()
 
     # Testowanie MongoDB
-    mongodb_query_time = test_mongodb_query()
+    #mongodb_query_time = test_mongodb_query()
 
     # Zbieranie statystyk systemowych
     system_stats = collect_system_stats()
     
     # Dodanie danych do statystyk
     system_stats['mariadb_query_time'] = mariadb_query_time
-    system_stats['mongodb_query_time'] = mongodb_query_time
+    #system_stats['mongodb_query_time'] = mongodb_query_time
     system_stats['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
 
     # Zapisanie danych do pliku CSV
