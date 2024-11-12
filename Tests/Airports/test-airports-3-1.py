@@ -64,26 +64,28 @@ def test_mongodb_query():
     """Funkcja do testowania zapytań w MongoDB"""
     try:
         client = MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=5000)
+        print("Connected to MongoDB")
+
         db = client['Airports']
-        collection = db['Flights']  
+        collection = db['Flights']
         print("MongoDB: Executing query...")
 
         pipeline = [
             {
-        "$lookup": {
-            "from": "Airlines",
-            "localField": "AIRLINE",        
-            "foreignField": "IATA_CODE",    
-            "as": "airline_info"
-        }
-        },
-        { "$unwind": "$airline_info" },
-        {
-            "$group": {
-                "_id": "$airline_info.AIRLINE",
-                "flight_count": { "$sum": 1 }
+                "$lookup": {
+                    "from": "airlines",
+                    "localField": "AIRLINE",
+                    "foreignField": "IATA_CODE",
+                    "as": "airline_info"
+                }
+            },
+            { "$unwind": "$airline_info" },
+            {
+                "$group": {
+                    "_id": "$airline_info.AIRLINE",
+                    "flight_count": { "$sum": 1 }
+                }
             }
-        }
         ]
 
         start_time = time.time()
@@ -92,7 +94,8 @@ def test_mongodb_query():
         all_results = []
 
         for doc in cursor:
-            all_results.append(doc)  
+            all_results.append(doc)
+            print(doc)  # Dodaj printowanie każdego dokumentu
 
         end_time = time.time()
         query_time = end_time - start_time
@@ -105,6 +108,7 @@ def test_mongodb_query():
     except Exception as e:
         print(f"Error: {e}")
         return None
+
 
 def save_to_csv(data, filename="system_stats.csv"):
     """Funkcja zapisująca wyniki do pliku CSV"""
