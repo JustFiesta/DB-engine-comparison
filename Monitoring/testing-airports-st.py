@@ -65,18 +65,23 @@ def test_mongodb_query():
         client = MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=5000)
         db = client['Airports']
         collection = db['Flights']
-        query = {"ARRIVAL_DELAY": {"$gt": 60}}  
+        query = {"ARRIVAL_DELAY": {"$gt": 60}}  # Możesz dostosować zapytanie do swoich potrzeb
         start_time = time.time()
 
-        # Dodaj wyjątek, aby lepiej złapać błędy
-        try:
-            result = list(collection.find(query))  # Pobieranie tylko 100 wyników
-        except Exception as e:
-            print(f"Błąd podczas wykonywania zapytania MongoDB: {e}")
-            return None
-        
+        # Wczytywanie wszystkich wyników, iterując przez kursor
+        cursor = collection.find(query)  # Pobiera wszystkie wyniki bez limitu
+        all_results = []
+
+        # Możesz kontrolować ilość wyników w jednym cyklu
+        for doc in cursor:
+            all_results.append(doc)  # Możesz też przetwarzać każdy dokument w tym miejscu
+            if len(all_results) % 100 == 0:  # Przykładowo co 100 wyników
+                print(f"Fetched {len(all_results)} rows")
+
         end_time = time.time()
         query_time = end_time - start_time
+        print(f"Query executed in {query_time} seconds. Total fetched: {len(all_results)}")
+
         client.close()
 
         return query_time
@@ -84,6 +89,7 @@ def test_mongodb_query():
     except Exception as e:
         print(f"Error: {e}")
         return None
+
 
 
 
