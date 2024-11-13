@@ -61,9 +61,8 @@ def test_mariadb_query():
         return None
 
 def test_mongodb_query():
-    """Funkcja do testowania zapytań w MongoDB z optymalizacjami dla dużych zbiorów danych"""
+    """Funkcja do testowania zapytań w MongoDB - przetwarzanie wszystkich rekordów"""
     try:
-        # Zwiększamy jeszcze bardziej timeouty
         client = MongoClient(
             'mongodb://localhost:27017/',
             serverSelectionTimeoutMS=30000,
@@ -77,35 +76,17 @@ def test_mongodb_query():
         db = client['Airports']
         collection = db['Flights']
 
-        # Najpierw sprawdźmy ile dokumentów spełnia podstawowy warunek
-        matching_count = collection.count_documents({"ARRIVAL_DELAY": {"$gt": 100}})
-        print(f"Documents matching ARRIVAL_DELAY > 100: {matching_count}")
-
-        # Dodajemy limit do zapytania i wykonujemy je w mniejszych porcjach
-        batch_size = 1000
         pipeline = [
             {
-                "$match": {
-                    "ARRIVAL_DELAY": {"$gt": 100}
-                }
-            },
-            {
-                # Limit dodany na początku pipeline'u
-                "$limit": batch_size
-            },
-            {
-                # Optymalizacja: pobieramy tylko potrzebne pola
-                "$project": {
-                    "AIRLINE": 1,
-                    "ORIGIN_AIRPORT": 1,
-                    "DESTINATION_AIRPORT": 1,
-                    "ARRIVAL_DELAY": 1
+                "$group": {
+                    "_id": "$AIRLINE",
+                    "flight_count": {"$sum": 1}
                 }
             },
             {
                 "$lookup": {
                     "from": "Airlines",
-                    "localField": "AIRLINE",
+                    "localField": "_id",
                     "foreignField": "IATA_CODE",
                     "as": "airline_info"
                 }
@@ -117,39 +98,9 @@ def test_mongodb_query():
                 }
             },
             {
-                "$lookup": {
-                    "from": "Airports",
-                    "localField": "ORIGIN_AIRPORT",
-                    "foreignField": "IATA_CODE",
-                    "as": "origin_airport"
-                }
-            },
-            {
-                "$unwind": {
-                    "path": "$origin_airport",
-                    "preserveNullAndEmptyArrays": True
-                }
-            },
-            {
-                "$lookup": {
-                    "from": "Airports",
-                    "localField": "DESTINATION_AIRPORT",
-                    "foreignField": "IATA_CODE",
-                    "as": "destination_airport"
-                }
-            },
-            {
-                "$unwind": {
-                    "path": "$destination_airport",
-                    "preserveNullAndEmptyArrays": True
-                }
-            },
-            {
                 "$project": {
                     "airline": "$airline_info.AIRLINE",
-                    "origin_airport": "$origin_airport.AIRPORT",
-                    "destination_airport": "$destination_airport.AIRPORT",
-                    "ARRIVAL_DELAY": 1,
+                    "flight_count": 1,
                     "_id": 0
                 }
             }
@@ -157,15 +108,14 @@ def test_mongodb_query():
 
         start_time = time.time()
         
-        print("\nMongoDB: Executing optimized query...")
+        print("\nMongoDB: Executing query...")
         
         try:
-            # Wykonujemy zapytanie z większymi opcjami wydajności
             cursor = collection.aggregate(
                 pipeline,
                 allowDiskUse=True,
-                batchSize=100,  # Mniejszy batch size dla lepszej kontroli pamięci
-                maxTimeMS=300000  # 5 minut maksymalnego czasu wykonania
+                batchSize=1000,
+                maxTimeMS=600000  # 10 minut maksymalnego czasu wykonania
             )
             
             all_results = []
@@ -175,15 +125,20 @@ def test_mongodb_query():
                 all_results.append(doc)
                 processed += 1
                 if processed % 100 == 0:
-                    print(f"Processed {processed} documents...")
+                    print(f"Processed {processed} airlines...")
                     
             end_time = time.time()
             query_time = end_time - start_time
             
             print(f"\nQuery statistics:")
             print(f"- Total time: {query_time:.2f} seconds")
-            print(f"- Documents processed: {len(all_results)}")
-            print(f"- Average processing time per document: {query_time/len(all_results):.4f} seconds")
+            print(f"- Airlines processed: {len(all_results)}")
+            print(f"- Average processing time per airline: {query_time/len(all_results):.4f} seconds")
+            
+            # Wyświetl przykładowe wyniki
+            print("\nSample results (first 5 airlines):")
+            for result in all_results[:5]:
+                print(result)
             
             client.close()
             return query_time
@@ -201,7 +156,6 @@ def test_mongodb_query():
         import traceback
         print(f"Full traceback:\n{traceback.format_exc()}")
         return None
-
 
 def save_to_csv(data, filename="system_stats.csv"):
     """Funkcja zapisująca wyniki do pliku CSV"""
