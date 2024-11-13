@@ -113,7 +113,7 @@ def test_mongodb_query():
             {
                 "$unwind": {
                     "path": "$airline_info",
-                    "preserveNullAndEmptyArrays": true
+                    "preserveNullAndEmptyArrays": True
                 }
             },
             {
@@ -127,7 +127,7 @@ def test_mongodb_query():
             {
                 "$unwind": {
                     "path": "$origin_airport",
-                    "preserveNullAndEmptyArrays": true
+                    "preserveNullAndEmptyArrays": True
                 }
             },
             {
