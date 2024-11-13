@@ -61,79 +61,136 @@ def test_mariadb_query():
         return None
 
 def test_mongodb_query():
-    """Funkcja do testowania zapytań w MongoDB"""
+    """Funkcja do testowania zapytań w MongoDB z dodatkowym debugowaniem"""
     try:
-        client = MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=5000)
+        # Zwiększamy timeout i dodajemy więcej opcji połączenia
+        client = MongoClient(
+            'mongodb://localhost:27017/',
+            serverSelectionTimeoutMS=10000,
+            connectTimeoutMS=20000,
+            socketTimeoutMS=45000
+        )
+        
+        # Sprawdzamy połączenie
+        client.admin.command('ping')
+        print("MongoDB: Successfully connected to the database")
+        
         db = client['Airports']
-        collection = db['Flights']  
-        print("MongoDB: Executing query...")
+        
+        # Sprawdzamy dostępne kolekcje
+        collections = db.list_collection_names()
+        print(f"Available collections: {collections}")
+        
+        collection = db['Flights']
+        
+        # Sprawdzamy czy kolekcje istnieją przed wykonaniem zapytania
+        required_collections = ['Flights', 'airlines', 'airports']
+        missing_collections = [coll for coll in required_collections if coll not in collections]
+        
+        if missing_collections:
+            raise Exception(f"Missing required collections: {missing_collections}")
+            
+        # Sprawdzamy przykładowy dokument z każdej kolekcji
+        print("\nSample documents from collections:")
+        for coll_name in required_collections:
+            sample_doc = db[coll_name].find_one()
+            print(f"\n{coll_name} sample document:")
+            print(sample_doc)
 
+        print("\nMongoDB: Executing query...")
+        
+        # Modyfikujemy pipeline, aby wykonywać operacje etapami
+        initial_pipeline = [
+            {
+                "$match": { "ARRIVAL_DELAY": { "$gt": 100 } }
+            }
+        ]
+        
+        # Najpierw sprawdzamy ile dokumentów spełnia warunek ARRIVAL_DELAY
+        matching_count = len(list(collection.aggregate(initial_pipeline)))
+        print(f"Documents matching ARRIVAL_DELAY > 100: {matching_count}")
+
+        # Pełny pipeline
         pipeline = [
             {
-                "$match": { "ARRIVAL_DELAY": { "$gt": 100 } }  
+                "$match": { "ARRIVAL_DELAY": { "$gt": 100 } }
             },
             {
                 "$lookup": {
-                    "from": "airlines",  
-                    "localField": "AIRLINE",  
-                    "foreignField": "IATA_CODE",  
-                    "as": "airline_info"  
+                    "from": "airlines",
+                    "localField": "AIRLINE",
+                    "foreignField": "IATA_CODE",
+                    "as": "airline_info"
                 }
             },
             {
-                "$unwind": "$airline_info" 
+                "$unwind": {
+                    "path": "$airline_info",
+                    "preserveNullAndEmptyArrays": True
+                }
             },
             {
                 "$lookup": {
-                    "from": "airports",  
-                    "localField": "ORIGIN_AIRPORT",  
-                    "foreignField": "IATA_CODE",  
-                    "as": "origin_airport"  
+                    "from": "airports",
+                    "localField": "ORIGIN_AIRPORT",
+                    "foreignField": "IATA_CODE",
+                    "as": "origin_airport"
                 }
             },
             {
-                "$unwind": "$origin_airport"  
+                "$unwind": {
+                    "path": "$origin_airport",
+                    "preserveNullAndEmptyArrays": True
+                }
             },
             {
                 "$lookup": {
-                    "from": "airports",  
-                    "localField": "DESTINATION_AIRPORT",  
-                    "foreignField": "IATA_CODE", 
-                    "as": "destination_airport"  
+                    "from": "airports",
+                    "localField": "DESTINATION_AIRPORT",
+                    "foreignField": "IATA_CODE",
+                    "as": "destination_airport"
                 }
             },
             {
-                "$unwind": "$destination_airport"  
+                "$unwind": {
+                    "path": "$destination_airport",
+                    "preserveNullAndEmptyArrays": True
+                }
             },
             {
-                "$project": {  
-                    "airline": "$airline_info.AIRLINE", 
-                    "origin_airport": "$origin_airport.AIRPORT",  
-                    "destination_airport": "$destination_airport.AIRPORT",  
-                    "ARRIVAL_DELAY": 1,  
-                    "_id": 0  
+                "$project": {
+                    "airline": "$airline_info.AIRLINE",
+                    "origin_airport": "$origin_airport.AIRPORT",
+                    "destination_airport": "$destination_airport.AIRPORT",
+                    "ARRIVAL_DELAY": 1,
+                    "_id": 0
                 }
             }
         ]
 
         start_time = time.time()
-
-        cursor = collection.aggregate(pipeline)
+        
+        # Wykonujemy zapytanie z limitem
+        cursor = collection.aggregate(pipeline, allowDiskUse=True)
         all_results = []
-
+        
         for doc in cursor:
-            all_results.append(doc)  
+            all_results.append(doc)
+            if len(all_results) % 100 == 0:
+                print(f"Processed {len(all_results)} documents...")
 
         end_time = time.time()
         query_time = end_time - start_time
         print(f"Query executed in {query_time} seconds. Total fetched: {len(all_results)}")
 
         client.close()
-
         return query_time
 
     except Exception as e:
         print(f"Error: {e}")
+        print(f"Error type: {type(e)}")
+        import traceback
+        print(f"Full traceback:\n{traceback.format_exc()}")
         return None
 
 def save_to_csv(data, filename="system_stats.csv"):

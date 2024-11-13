@@ -30,7 +30,7 @@ def test_mariadb_query():
             database='Bikes'
         )
         cursor = conn.cursor()
-        query = "SELECT * FROM TripUsers WHERE tripduration > 30 * 60;"  
+        query = "SELECT * FROM TripUsers WHERE end_station_name = 'Central Park';"  
         start_time = time.time()
 
         print("MariaDB: Executing query...")
