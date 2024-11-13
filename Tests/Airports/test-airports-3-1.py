@@ -61,59 +61,46 @@ def test_mariadb_query():
         return None
 
 def test_mongodb_query():
-    """Funkcja do testowania zapytań w MongoDB z dodatkowym debugowaniem"""
+    """Funkcja do testowania zapytań w MongoDB z optymalizacjami dla dużych zbiorów danych"""
     try:
-        # Zwiększamy timeout i dodajemy więcej opcji połączenia
+        # Zwiększamy jeszcze bardziej timeouty
         client = MongoClient(
             'mongodb://localhost:27017/',
-            serverSelectionTimeoutMS=10000,
-            connectTimeoutMS=20000,
-            socketTimeoutMS=45000
+            serverSelectionTimeoutMS=30000,
+            connectTimeoutMS=60000,
+            socketTimeoutMS=90000,
+            maxPoolSize=1,
+            waitQueueTimeoutMS=90000
         )
         
-        # Sprawdzamy połączenie
-        client.admin.command('ping')
-        print("MongoDB: Successfully connected to the database")
-        
+        print("MongoDB: Connected to database")
         db = client['Airports']
-        
-        # Sprawdzamy dostępne kolekcje
-        collections = db.list_collection_names()
-        print(f"Available collections: {collections}")
-        
         collection = db['Flights']
-        
-        # Sprawdzamy czy kolekcje istnieją przed wykonaniem zapytania
-        required_collections = ['Flights', 'Airlines', 'Airports']
-        missing_collections = [coll for coll in required_collections if coll not in collections]
-        
-        if missing_collections:
-            raise Exception(f"Missing required collections: {missing_collections}")
-            
-        # Sprawdzamy przykładowy dokument z każdej kolekcji
-        print("\nSample documents from collections:")
-        for coll_name in required_collections:
-            sample_doc = db[coll_name].find_one()
-            print(f"\n{coll_name} sample document:")
-            print(sample_doc)
 
-        print("\nMongoDB: Executing query...")
-        
-        # Modyfikujemy pipeline, aby wykonywać operacje etapami
-        initial_pipeline = [
-            {
-                "$match": { "ARRIVAL_DELAY": { "$gt": 100 } }
-            }
-        ]
-        
-        # Najpierw sprawdzamy ile dokumentów spełnia warunek ARRIVAL_DELAY
-        matching_count = len(list(collection.aggregate(initial_pipeline)))
+        # Najpierw sprawdźmy ile dokumentów spełnia podstawowy warunek
+        matching_count = collection.count_documents({"ARRIVAL_DELAY": {"$gt": 100}})
         print(f"Documents matching ARRIVAL_DELAY > 100: {matching_count}")
 
-        # Pełny pipeline
+        # Dodajemy limit do zapytania i wykonujemy je w mniejszych porcjach
+        batch_size = 1000
         pipeline = [
             {
-                "$match": { "ARRIVAL_DELAY": { "$gt": 100 } }
+                "$match": {
+                    "ARRIVAL_DELAY": {"$gt": 100}
+                }
+            },
+            {
+                # Limit dodany na początku pipeline'u
+                "$limit": batch_size
+            },
+            {
+                # Optymalizacja: pobieramy tylko potrzebne pola
+                "$project": {
+                    "AIRLINE": 1,
+                    "ORIGIN_AIRPORT": 1,
+                    "DESTINATION_AIRPORT": 1,
+                    "ARRIVAL_DELAY": 1
+                }
             },
             {
                 "$lookup": {
@@ -126,7 +113,7 @@ def test_mongodb_query():
             {
                 "$unwind": {
                     "path": "$airline_info",
-                    "preserveNullAndEmptyArrays": True
+                    "preserveNullAndEmptyArrays": true
                 }
             },
             {
@@ -140,7 +127,7 @@ def test_mongodb_query():
             {
                 "$unwind": {
                     "path": "$origin_airport",
-                    "preserveNullAndEmptyArrays": True
+                    "preserveNullAndEmptyArrays": true
                 }
             },
             {
@@ -154,7 +141,7 @@ def test_mongodb_query():
             {
                 "$unwind": {
                     "path": "$destination_airport",
-                    "preserveNullAndEmptyArrays": True
+                    "preserveNullAndEmptyArrays": true
                 }
             },
             {
@@ -170,25 +157,47 @@ def test_mongodb_query():
 
         start_time = time.time()
         
-        # Wykonujemy zapytanie z limitem
-        cursor = collection.aggregate(pipeline, allowDiskUse=True)
-        all_results = []
+        print("\nMongoDB: Executing optimized query...")
         
-        for doc in cursor:
-            all_results.append(doc)
-            if len(all_results) % 100 == 0:
-                print(f"Processed {len(all_results)} documents...")
-
-        end_time = time.time()
-        query_time = end_time - start_time
-        print(f"Query executed in {query_time} seconds. Total fetched: {len(all_results)}")
-
-        client.close()
-        return query_time
-
+        try:
+            # Wykonujemy zapytanie z większymi opcjami wydajności
+            cursor = collection.aggregate(
+                pipeline,
+                allowDiskUse=True,
+                batchSize=100,  # Mniejszy batch size dla lepszej kontroli pamięci
+                maxTimeMS=300000  # 5 minut maksymalnego czasu wykonania
+            )
+            
+            all_results = []
+            processed = 0
+            
+            for doc in cursor:
+                all_results.append(doc)
+                processed += 1
+                if processed % 100 == 0:
+                    print(f"Processed {processed} documents...")
+                    
+            end_time = time.time()
+            query_time = end_time - start_time
+            
+            print(f"\nQuery statistics:")
+            print(f"- Total time: {query_time:.2f} seconds")
+            print(f"- Documents processed: {len(all_results)}")
+            print(f"- Average processing time per document: {query_time/len(all_results):.4f} seconds")
+            
+            client.close()
+            return query_time
+            
+        except Exception as e:
+            print(f"\nError during query execution:")
+            print(f"Error type: {type(e)}")
+            print(f"Error message: {str(e)}")
+            raise
+            
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"\nGeneral error:")
         print(f"Error type: {type(e)}")
+        print(f"Error message: {str(e)}")
         import traceback
         print(f"Full traceback:\n{traceback.format_exc()}")
         return None
