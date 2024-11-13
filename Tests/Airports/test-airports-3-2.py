@@ -37,13 +37,13 @@ def test_mariadb_query():
             a.AIRLINE as airline_name,
             orig.AIRPORT as origin_airport,
             dest.AIRPORT as destination_airport,
-            f.ARRIVAL_DELAY
+            f.AIRLINE_DELAY
         FROM Flights f
         JOIN Airlines a ON f.AIRLINE = a.IATA_CODE
         JOIN Airports orig ON f.ORIGIN_AIRPORT = orig.IATA_CODE
         JOIN Airports dest ON f.DESTINATION_AIRPORT = dest.IATA_CODE
-        WHERE f.ARRIVAL_DELAY > 100
-        ORDER BY f.ARRIVAL_DELAY DESC;
+        WHERE f.AIRLINE_DELAY > 100
+        ORDER BY f.AIRLINE_DELAY DESC;
         """
 
         start_time = time.time()
