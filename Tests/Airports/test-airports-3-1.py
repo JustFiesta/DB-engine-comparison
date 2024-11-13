@@ -141,7 +141,7 @@ def test_mongodb_query():
             {
                 "$unwind": {
                     "path": "$destination_airport",
-                    "preserveNullAndEmptyArrays": true
+                    "preserveNullAndEmptyArrays": True
                 }
             },
             {
