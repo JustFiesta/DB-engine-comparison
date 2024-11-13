@@ -61,62 +61,136 @@ def test_mariadb_query():
         return None
 
 def test_mongodb_query():
-    """Funkcja do testowania zapytań w MongoDB"""
+    """Funkcja do testowania zapytań w MongoDB z dodatkowym debugowaniem"""
     try:
-        client = MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=10000, socketTimeoutMS=60000)
-        print("Connected to MongoDB")
-
+        # Zwiększamy timeout i dodajemy więcej opcji połączenia
+        client = MongoClient(
+            'mongodb://localhost:27017/',
+            serverSelectionTimeoutMS=10000,
+            connectTimeoutMS=20000,
+            socketTimeoutMS=45000
+        )
+        
+        # Sprawdzamy połączenie
+        client.admin.command('ping')
+        print("MongoDB: Successfully connected to the database")
+        
         db = client['Airports']
+        
+        # Sprawdzamy dostępne kolekcje
+        collections = db.list_collection_names()
+        print(f"Available collections: {collections}")
+        
         collection = db['Flights']
-        print("MongoDB: Executing query...")
+        
+        # Sprawdzamy czy kolekcje istnieją przed wykonaniem zapytania
+        required_collections = ['Flights', 'Airlines', 'Airports']
+        missing_collections = [coll for coll in required_collections if coll not in collections]
+        
+        if missing_collections:
+            raise Exception(f"Missing required collections: {missing_collections}")
+            
+        # Sprawdzamy przykładowy dokument z każdej kolekcji
+        print("\nSample documents from collections:")
+        for coll_name in required_collections:
+            sample_doc = db[coll_name].find_one()
+            print(f"\n{coll_name} sample document:")
+            print(sample_doc)
 
+        print("\nMongoDB: Executing query...")
+        
+        # Modyfikujemy pipeline, aby wykonywać operacje etapami
+        initial_pipeline = [
+            {
+                "$match": { "ARRIVAL_DELAY": { "$gt": 100 } }
+            }
+        ]
+        
+        # Najpierw sprawdzamy ile dokumentów spełnia warunek ARRIVAL_DELAY
+        matching_count = len(list(collection.aggregate(initial_pipeline)))
+        print(f"Documents matching ARRIVAL_DELAY > 100: {matching_count}")
+
+        # Pełny pipeline
         pipeline = [
             {
+                "$match": { "ARRIVAL_DELAY": { "$gt": 100 } }
+            },
+            {
                 "$lookup": {
-                    "from": "airlines",
-                    "localField": "AIRLINE",  # Pole w Flights
-                    "foreignField": "IATA_CODE",  # Powiązane pole w Airlines
+                    "from": "Airlines",
+                    "localField": "AIRLINE",
+                    "foreignField": "IATA_CODE",
                     "as": "airline_info"
                 }
             },
             {
-                "$unwind": "$airline_info"  # Rozwijamy dane połączone z Airlines
+                "$unwind": {
+                    "path": "$airline_info",
+                    "preserveNullAndEmptyArrays": True
+                }
             },
             {
-                "$group": {
-                    "_id": "$airline_info.AIRLINE",  # Grupujemy według nazwy linii lotniczej
-                    "flight_count": { "$sum": 1 }  # Liczymy liczbę lotów dla każdej linii
+                "$lookup": {
+                    "from": "Airports",
+                    "localField": "ORIGIN_AIRPORT",
+                    "foreignField": "IATA_CODE",
+                    "as": "origin_airport"
+                }
+            },
+            {
+                "$unwind": {
+                    "path": "$origin_airport",
+                    "preserveNullAndEmptyArrays": True
+                }
+            },
+            {
+                "$lookup": {
+                    "from": "Airports",
+                    "localField": "DESTINATION_AIRPORT",
+                    "foreignField": "IATA_CODE",
+                    "as": "destination_airport"
+                }
+            },
+            {
+                "$unwind": {
+                    "path": "$destination_airport",
+                    "preserveNullAndEmptyArrays": True
                 }
             },
             {
                 "$project": {
-                    "_id": 0,
-                    "airline": "$_id",  # Nazwa linii lotniczej
-                    "flight_count": 1   # Liczba lotów
+                    "airline": "$airline_info.AIRLINE",
+                    "origin_airport": "$origin_airport.AIRPORT",
+                    "destination_airport": "$destination_airport.AIRPORT",
+                    "ARRIVAL_DELAY": 1,
+                    "_id": 0
                 }
             }
         ]
 
-
         start_time = time.time()
-
-        cursor = collection.aggregate(pipeline)
+        
+        # Wykonujemy zapytanie z limitem
+        cursor = collection.aggregate(pipeline, allowDiskUse=True)
         all_results = []
-
+        
         for doc in cursor:
             all_results.append(doc)
-            print(doc)  # Dodaj printowanie każdego dokumentu
+            if len(all_results) % 100 == 0:
+                print(f"Processed {len(all_results)} documents...")
 
         end_time = time.time()
         query_time = end_time - start_time
         print(f"Query executed in {query_time} seconds. Total fetched: {len(all_results)}")
 
         client.close()
-
         return query_time
 
     except Exception as e:
         print(f"Error: {e}")
+        print(f"Error type: {type(e)}")
+        import traceback
+        print(f"Full traceback:\n{traceback.format_exc()}")
         return None
 
 
