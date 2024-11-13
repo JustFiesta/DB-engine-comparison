@@ -5,7 +5,7 @@ from pymongo import MongoClient
 import csv
 
 def collect_system_stats():
-    """Funkcja zbierająca statystyki systemowe, w tym użycie dysku"""
+    """Funkcja zbierająca statystyki systemowe"""
     process = psutil.Process()
     stats = {
         'cpu_percent': psutil.cpu_percent(interval=1),
@@ -13,10 +13,10 @@ def collect_system_stats():
         'read_bytes': process.io_counters().read_bytes,
         'write_bytes': process.io_counters().write_bytes,
         'open_files': len(process.open_files()),
-        'disk_usage_percent': psutil.disk_usage('/').percent, 
-        'disk_total': psutil.disk_usage('/').total,             
-        'disk_used': psutil.disk_usage('/').used,             
-        'disk_free': psutil.disk_usage('/').free                
+        'disk_usage_percent': psutil.disk_usage('/').percent,
+        'disk_total': psutil.disk_usage('/').total,
+        'disk_used': psutil.disk_usage('/').used,
+        'disk_free': psutil.disk_usage('/').free
     }
     return stats
 
@@ -30,22 +30,41 @@ def test_mariadb_query():
             database='Airports'
         )
         cursor = conn.cursor()
-        query = "SELECT Flights.FLIGHT_ID, Airlines.AIRLINE AS airline_name, origin_airports.AIRPORT AS origin_airport, destination_airports.AIRPORT AS destination_airport, Flights.ARRIVAL_DELAY FROM Flights JOIN Airlines ON Flights.AIRLINE = Airlines.IATA_CODE JOIN Airports AS origin_airports ON Flights.ORIGIN_AIRPORT = origin_airports.IATA_CODE JOIN Airports AS destination_airports ON Flights.DESTINATION_AIRPORT = destination_airports.IATA_CODE WHERE Flights.ARRIVAL_DELAY > 100;"
+        
+        # Zapytanie z JOIN-ami do znalezienia opóźnionych lotów
+        query = """
+        SELECT 
+            a.AIRLINE as airline_name,
+            orig.AIRPORT as origin_airport,
+            dest.AIRPORT as destination_airport,
+            f.ARRIVAL_DELAY
+        FROM Flights f
+        JOIN Airlines a ON f.AIRLINE = a.IATA_CODE
+        JOIN Airports orig ON f.ORIGIN_AIRPORT = orig.IATA_CODE
+        JOIN Airports dest ON f.DESTINATION_AIRPORT = dest.IATA_CODE
+        WHERE f.ARRIVAL_DELAY > 100
+        ORDER BY f.ARRIVAL_DELAY DESC;
+        """
 
         start_time = time.time()
 
         print("MariaDB: Executing query...")
         cursor.execute(query)
         
+        results_count = 0
+        # Pobieramy wyniki w paczkach po 1000
+        while True:
+            results = cursor.fetchmany(1000)
+            if not results:
+                break
+            results_count += len(results)
+            if results_count % 10000 == 0:
+                print(f"Fetched {results_count} rows...")
         
-        result = cursor.fetchmany(100)  
-        while result:
-            print(f"Fetched {len(result)} rows")
-            result = cursor.fetchmany(100)
-
         end_time = time.time()
         query_time = end_time - start_time
-        print(f"Query executed in {query_time} seconds.")
+        print(f"Query executed in {query_time:.2f} seconds.")
+        print(f"Total rows fetched: {results_count}")
         
         cursor.close()
         conn.close()
@@ -55,69 +74,35 @@ def test_mariadb_query():
     except mysql.connector.Error as err:
         print(f"MariaDB Error: {err}")
         return None
-
     except Exception as e:
         print(f"General error: {e}")
         return None
 
 def test_mongodb_query():
-    """Funkcja do testowania zapytań w MongoDB z dodatkowym debugowaniem"""
+    """Funkcja do testowania zapytań w MongoDB"""
     try:
-        # Zwiększamy timeout i dodajemy więcej opcji połączenia
         client = MongoClient(
             'mongodb://localhost:27017/',
-            serverSelectionTimeoutMS=10000,
-            connectTimeoutMS=20000,
-            socketTimeoutMS=45000
+            serverSelectionTimeoutMS=30000,
+            connectTimeoutMS=60000,
+            socketTimeoutMS=90000,
+            maxPoolSize=1,
+            waitQueueTimeoutMS=90000
         )
         
-        # Sprawdzamy połączenie
-        client.admin.command('ping')
-        print("MongoDB: Successfully connected to the database")
-        
+        print("MongoDB: Connected to database")
         db = client['Airports']
-        
-        # Sprawdzamy dostępne kolekcje
-        collections = db.list_collection_names()
-        print(f"Available collections: {collections}")
-        
         collection = db['Flights']
-        
-        # Sprawdzamy czy kolekcje istnieją przed wykonaniem zapytania
-        required_collections = ['Flights', 'airlines', 'airports']
-        missing_collections = [coll for coll in required_collections if coll not in collections]
-        
-        if missing_collections:
-            raise Exception(f"Missing required collections: {missing_collections}")
-            
-        # Sprawdzamy przykładowy dokument z każdej kolekcji
-        print("\nSample documents from collections:")
-        for coll_name in required_collections:
-            sample_doc = db[coll_name].find_one()
-            print(f"\n{coll_name} sample document:")
-            print(sample_doc)
 
-        print("\nMongoDB: Executing query...")
-        
-        # Modyfikujemy pipeline, aby wykonywać operacje etapami
-        initial_pipeline = [
-            {
-                "$match": { "ARRIVAL_DELAY": { "$gt": 100 } }
-            }
-        ]
-        
-        # Najpierw sprawdzamy ile dokumentów spełnia warunek ARRIVAL_DELAY
-        matching_count = len(list(collection.aggregate(initial_pipeline)))
-        print(f"Documents matching ARRIVAL_DELAY > 100: {matching_count}")
-
-        # Pełny pipeline
         pipeline = [
             {
-                "$match": { "ARRIVAL_DELAY": { "$gt": 100 } }
+                "$match": {
+                    "ARRIVAL_DELAY": {"$gt": 100}
+                }
             },
             {
                 "$lookup": {
-                    "from": "airlines",
+                    "from": "Airlines",
                     "localField": "AIRLINE",
                     "foreignField": "IATA_CODE",
                     "as": "airline_info"
@@ -131,7 +116,7 @@ def test_mongodb_query():
             },
             {
                 "$lookup": {
-                    "from": "airports",
+                    "from": "Airports",
                     "localField": "ORIGIN_AIRPORT",
                     "foreignField": "IATA_CODE",
                     "as": "origin_airport"
@@ -145,7 +130,7 @@ def test_mongodb_query():
             },
             {
                 "$lookup": {
-                    "from": "airports",
+                    "from": "Airports",
                     "localField": "DESTINATION_AIRPORT",
                     "foreignField": "IATA_CODE",
                     "as": "destination_airport"
@@ -159,36 +144,55 @@ def test_mongodb_query():
             },
             {
                 "$project": {
-                    "airline": "$airline_info.AIRLINE",
+                    "airline_name": "$airline_info.AIRLINE",
                     "origin_airport": "$origin_airport.AIRPORT",
                     "destination_airport": "$destination_airport.AIRPORT",
-                    "ARRIVAL_DELAY": 1,
+                    "arrival_delay": "$ARRIVAL_DELAY",
                     "_id": 0
                 }
+            },
+            {
+                "$sort": {"arrival_delay": -1}
             }
         ]
 
         start_time = time.time()
+        print("\nMongoDB: Executing query...")
         
-        # Wykonujemy zapytanie z limitem
-        cursor = collection.aggregate(pipeline, allowDiskUse=True)
-        all_results = []
-        
-        for doc in cursor:
-            all_results.append(doc)
-            if len(all_results) % 100 == 0:
-                print(f"Processed {len(all_results)} documents...")
-
-        end_time = time.time()
-        query_time = end_time - start_time
-        print(f"Query executed in {query_time} seconds. Total fetched: {len(all_results)}")
-
-        client.close()
-        return query_time
-
+        try:
+            cursor = collection.aggregate(
+                pipeline,
+                allowDiskUse=True,
+                batchSize=1000,
+                maxTimeMS=600000  # 10 minut
+            )
+            
+            results_count = 0
+            for _ in cursor:
+                results_count += 1
+                if results_count % 10000 == 0:
+                    print(f"Processed {results_count} documents...")
+                    
+            end_time = time.time()
+            query_time = end_time - start_time
+            
+            print(f"\nQuery statistics:")
+            print(f"- Total time: {query_time:.2f} seconds")
+            print(f"- Documents processed: {results_count}")
+            
+            client.close()
+            return query_time
+            
+        except Exception as e:
+            print(f"\nError during query execution:")
+            print(f"Error type: {type(e)}")
+            print(f"Error message: {str(e)}")
+            raise
+            
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"\nGeneral error:")
         print(f"Error type: {type(e)}")
+        print(f"Error message: {str(e)}")
         import traceback
         print(f"Full traceback:\n{traceback.format_exc()}")
         return None
@@ -202,11 +206,7 @@ def save_to_csv(data, filename="system_stats.csv"):
         writer.writerow(data)
 
 def test_database_performance():
-    """
-    Funkcja do jednorazowego testowania wydajności bazy danych.
-    Wykonuje zapytania do baz danych, zbiera statystyki systemowe
-    i zapisuje wynik w pliku CSV.
-    """
+    """Funkcja do testowania wydajności bazy danych"""
     # Testowanie MariaDB
     mariadb_query_time = test_mariadb_query() 
 
@@ -216,15 +216,16 @@ def test_database_performance():
     # Zbieranie statystyk systemowych
     system_stats = collect_system_stats()
     
-    # Dodanie danych do statystyk
+    # Dodanie timestampu
     system_stats['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
 
-    # Dodanie nazw silników baz danych do wyników
+    # Zapisanie wyników dla MariaDB
     if mariadb_query_time is not None:
         system_stats['database'] = 'MariaDB'
         system_stats['query_time'] = mariadb_query_time
         save_to_csv(system_stats)
 
+    # Zapisanie wyników dla MongoDB
     if mongodb_query_time is not None:
         system_stats['database'] = 'MongoDB'
         system_stats['query_time'] = mongodb_query_time
