@@ -27,7 +27,7 @@ def test_mariadb_query():
             host='localhost',
             user='mariadb',
             password='P@ssw0rd',
-            database='Bikes'
+            database='bikes'
         )
         cursor = conn.cursor()
         query = "SELECT * FROM TripUsers WHERE end_station_name = 'Central Park';"  

@@ -43,7 +43,7 @@ def test_mariadb_query():
 
         end_time = time.time()
         query_time = end_time - start_time
-        print(f"Query executed in {query_time} seconds.")
+        print(f"Query executed in {query_time} seconds. Total fetched: {len(result)}")
         
         cursor.close()
         conn.close()
@@ -65,8 +65,8 @@ def test_mongodb_query():
         db = client['Bikes']
         collection = db['TripUsers']  
         
-        query = { "tripduration": { "$gt": 1800 } }
-        projection = {"tripduration": 1, "_id": 0}  
+        query = { "end_station_name": "Central Park" }
+        projection = {"end_station_name": 1, "_id": 0}
         
         start_time = time.time()
         print("MongoDB: Executing query...")
@@ -88,6 +88,7 @@ def test_mongodb_query():
     except Exception as e:
         print(f"Error: {e}")
         return None
+
 
 
 def save_to_csv(data, filename="system_stats.csv"):
