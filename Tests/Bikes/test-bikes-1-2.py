@@ -36,14 +36,15 @@ def test_mariadb_query():
         print("MariaDB: Executing query...")
         cursor.execute(query)
         
+        total_results = 0
         result = cursor.fetchmany(100)  
         while result:
-            print(f"Fetched {len(result)} rows")
+            total_results += len(result)  # Zliczanie wyników
             result = cursor.fetchmany(100)
 
         end_time = time.time()
         query_time = end_time - start_time
-        print(f"Query executed in {query_time} seconds.")
+        print(f"Query executed in {query_time} seconds. Total fetched: {total_results} rows.")
         
         cursor.close()
         conn.close()
@@ -63,7 +64,7 @@ def test_mongodb_query():
     try:
         client = MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=5000)
         db = client['Bikes']
-        collection = db['Airlines']
+        collection = db['TripUsers']
         
         query = { "end_station_name": "Newport Pkwy" }
         projection = {"end_station_name": 1, "_id": 0}  
