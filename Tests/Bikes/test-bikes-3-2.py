@@ -30,7 +30,7 @@ def test_mariadb_query():
             database='bikes'
         )
         cursor = conn.cursor()
-        query = "SELECT tripusers.trip_id, tripusers.tripduration, start_stations.station_name AS start_station_name, end_stations.station_name AS end_station_name FROM tripusers JOIN  stations AS start_stations ON tripusers.start_station_id = start_stations.station_id JOIN stations AS end_stations ON tripusers.end_station_id = end_stations.station_id WHERE tripusers.tripduration > 20;"  
+        query = "SELECT t.trip_id, t.tripduration, start_stations.station_name AS start_station_name, end_stations.station_name AS end_station_name FROM TripUsers t JOIN  Stations AS start_stations ON t.start_station_id = start_stations.station_id JOIN Stations AS end_stations ON t.end_station_id = end_stations.station_id WHERE t.tripduration > 20;"  
         start_time = time.time()
 
         print("MariaDB: Executing query...")
