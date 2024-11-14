@@ -40,7 +40,7 @@ def test_mariadb_query():
         
         result = cursor.fetchmany(100)  
         while result:
-            print(f"Fetched {len(result)} rows")
+            #print(f"Fetched {len(result)} rows")
             result = cursor.fetchmany(100)
 
         end_time = time.time()
@@ -81,15 +81,14 @@ def test_mongodb_query():
         db.Flights.create_index([("AIRLINE", 1)])
         db.Flights.create_index([("ORIGIN_AIRPORT", 1)])
         db.Flights.create_index([("DESTINATION_AIRPORT", 1)])
-        db.Flights.create_index([("AIRLINE_DELAY", 1)])  # Zmienione z ARRIVAL_DELAY
+        db.Flights.create_index([("ARRVAL_DELAY", 1)])  # Zmienione z ARRIVAL_DELAY
         
         collection = db['Flights']
 
-        # Poprawiony pipeline, używający AIRLINE_DELAY zamiast ARRIVAL_DELAY
         pipeline = [
             {
                 "$match": {
-                    "AIRLINE_DELAY": {"$gt": 100}  # Zmienione z ARRIVAL_DELAY
+                    "ARRIVAL_DELAY": {"$gt": 100}  # Zmienione z ARRIVAL_DELAY
                 }
             },
             {
@@ -130,12 +129,12 @@ def test_mongodb_query():
                     "airline_name": "$airline_info.AIRLINE",
                     "origin_airport": "$origin_airport.AIRPORT",
                     "destination_airport": "$destination_airport.AIRPORT",
-                    "airline_delay": "$AIRLINE_DELAY",  # Zmienione z arrival_delay
+                    "arrival_delay": "$ARRIVAL_DELAY",  # Zmienione z arrival_delay
                     "_id": 0
                 }
             },
             {
-                "$sort": {"airline_delay": -1}  # Zmienione z arrival_delay
+                "$sort": {"arrival_delay": -1}  # Zmienione z arrival_delay
             }
         ]
 
