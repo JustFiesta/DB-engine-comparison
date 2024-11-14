@@ -87,11 +87,11 @@ def test_mongodb_query():
         
         client.close()
 
-        return query_time
+        return query_time, len(all_results)
 
     except Exception as e:
         print(f"Error: {e}")
-        return None
+        return None, 0
 
 def save_to_csv(data, filename="system_stats.csv"):
     """Funkcja zapisująca wyniki do pliku CSV"""
