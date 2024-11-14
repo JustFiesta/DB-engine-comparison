@@ -36,27 +36,29 @@ def test_mariadb_query():
         print("MariaDB: Executing query...")
         cursor.execute(query)
         
+        total_results = 0
         result = cursor.fetchmany(100)  
         while result:
-            #print(f"Fetched {len(result)} rows")
+            total_results += len(result)  # Zliczanie wyników
             result = cursor.fetchmany(100)
 
         end_time = time.time()
         query_time = end_time - start_time
-        print(f"Query executed in {query_time} seconds. Total fetched: {len(result)}")
-        
+        print(f"Query executed in {query_time} seconds. Total fetched: {total_results} rows.")
+
         cursor.close()
         conn.close()
 
-        return query_time
-        
+        return query_time, total_results  # Zwracanie liczby wyników
+
     except mysql.connector.Error as err:
         print(f"MariaDB Error: {err}")
-        return None
+        return None, 0
 
     except Exception as e:
         print(f"General error: {e}")
-        return None
+        return None, 0
+
 
 def test_mongodb_query():
     """Funkcja do testowania zapytań w MongoDB"""
