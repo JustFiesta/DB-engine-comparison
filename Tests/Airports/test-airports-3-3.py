@@ -30,7 +30,7 @@ def test_mariadb_query():
             database='Airports'
         )
         cursor = conn.cursor()
-        query = "SELECT ap.AIRPORT AS destination_airport, a.AIRLINE AS airline_name FROM flights f JOIN airlines a ON f.AIRLINE = a.IATA_CODE JOIN airports ap ON f.DESTINATION_AIRPORT = ap.IATA_CODE WHERE f.ARRIVAL_DELAY > 120;"
+        query = "SELECT ap.AIRPORT AS destination_airport, a.AIRLINE AS airline_name FROM Flights f JOIN Airlines a ON f.AIRLINE = a.IATA_CODE JOIN Airports ap ON f.DESTINATION_AIRPORT = ap.IATA_CODE WHERE f.ARRIVAL_DELAY > 120;"
 
         start_time = time.time()
 
@@ -63,21 +63,41 @@ def test_mariadb_query():
 def test_mongodb_query():
     """Funkcja do testowania zapytań w MongoDB"""
     try:
-        client = MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=5000)
+        client = MongoClient(
+            'mongodb://localhost:27017/',
+            serverSelectionTimeoutMS=120000,
+            connectTimeoutMS=120000,
+            socketTimeoutMS=120000,
+            maxPoolSize=10,
+            waitQueueTimeoutMS=120000,
+            retryWrites=True,
+            w='majority'
+        )
+        
+        print("MongoDB: Connected to database")
         db = client['Airports']
-        collection = db['Flights']  
-        print("MongoDB: Executing query...")
+        
+        print("Checking and creating indexes...")
+        db.Flights.create_index([("AIRLINE", 1)])
+        db.Flights.create_index([("ORIGIN_AIRPORT", 1)])
+        db.Flights.create_index([("DESTINATION_AIRPORT", 1)])
+        db.Flights.create_index([("AIRLINE_DELAY", 1)])  # Zmienione z ARRIVAL_DELAY
+        
+        collection = db['Flights']
 
+        # Poprawiony pipeline, używający AIRLINE_DELAY zamiast ARRIVAL_DELAY
         pipeline = [
             {
-                "$match": { "ARRIVAL_DELAY": { "$gt": 120 } }  
+                "$match": {
+                    "AIRLINE_DELAY": {"$gt": 100}  # Zmienione z ARRIVAL_DELAY
+                }
             },
             {
                 "$lookup": {
-                    "from": "airlines",  
-                    "localField": "AIRLINE",  
-                    "foreignField": "IATA_CODE",  
-                    "as": "airline_info"  
+                    "from": "Airlines",
+                    "localField": "AIRLINE",
+                    "foreignField": "IATA_CODE",
+                    "as": "airline_info"
                 }
             },
             {
@@ -85,54 +105,94 @@ def test_mongodb_query():
             },
             {
                 "$lookup": {
-                    "from": "airports",  
-                    "localField": "ORIGIN_AIRPORT",  
-                    "foreignField": "IATA_CODE",  
-                    "as": "origin_airport"  
+                    "from": "Airports",
+                    "localField": "ORIGIN_AIRPORT",
+                    "foreignField": "IATA_CODE",
+                    "as": "origin_airport"
                 }
             },
             {
-                "$unwind": "$origin_airport"  
+                "$unwind": "$origin_airport"
             },
             {
                 "$lookup": {
-                    "from": "airports",  
-                    "localField": "DESTINATION_AIRPORT",  
-                    "foreignField": "IATA_CODE",  
-                    "as": "destination_airport"  
+                    "from": "Airports",
+                    "localField": "DESTINATION_AIRPORT",
+                    "foreignField": "IATA_CODE",
+                    "as": "destination_airport"
                 }
             },
             {
-                "$unwind": "$destination_airport"  
+                "$unwind": "$destination_airport"
             },
             {
-                "$project": {  
-                    "airline": "$airline_info.AIRLINE",  
-                    "origin_airport": "$origin_airport.AIRPORT",  
-                    "destination_airport": "$destination_airport.AIRPORT", 
-                    "ARRIVAL_DELAY": 1,  
-                    "_id": 0 
+                "$project": {
+                    "airline_name": "$airline_info.AIRLINE",
+                    "origin_airport": "$origin_airport.AIRPORT",
+                    "destination_airport": "$destination_airport.AIRPORT",
+                    "airline_delay": "$AIRLINE_DELAY",  # Zmienione z arrival_delay
+                    "_id": 0
                 }
+            },
+            {
+                "$sort": {"airline_delay": -1}  # Zmienione z arrival_delay
             }
         ]
+
         start_time = time.time()
-
-        cursor = collection.aggregate(pipeline)
-        all_results = []
-
-        for doc in cursor:
-            all_results.append(doc)  
-
-        end_time = time.time()
-        query_time = end_time - start_time
-        print(f"Query executed in {query_time} seconds. Total fetched: {len(all_results)}")
-
-        client.close()
-
-        return query_time
-
+        print("\nMongoDB: Executing query...")
+        
+        try:
+            # Dodane logowanie przykładowych wyników
+            cursor = collection.aggregate(
+                pipeline,
+                allowDiskUse=True,
+                batchSize=500,
+                maxTimeMS=1800000
+            )
+            
+            results_count = 0
+            sample_results = []  # Lista na przykładowe wyniki
+            
+            for doc in cursor:
+                results_count += 1
+                if results_count <= 5:  # Zapisz pierwsze 5 wyników
+                    sample_results.append(doc)
+                if results_count % 5000 == 0:
+                    print(f"Processed {results_count} documents...")
+                    
+            end_time = time.time()
+            query_time = end_time - start_time
+            
+            print(f"\nQuery statistics:")
+            print(f"- Total time: {query_time:.2f} seconds")
+            print(f"- Documents processed: {results_count}")
+            
+            # Wyświetl przykładowe wyniki
+            if sample_results:
+                print("\nSample results (first 5 documents):")
+                for idx, doc in enumerate(sample_results, 1):
+                    print(f"\nDocument {idx}:")
+                    print(f"Airline: {doc.get('airline_name')}")
+                    print(f"Origin: {doc.get('origin_airport')}")
+                    print(f"Destination: {doc.get('destination_airport')}")
+                    print(f"Delay: {doc.get('airline_delay')}")
+            
+            client.close()
+            return query_time
+            
+        except Exception as e:
+            print(f"\nError during query execution:")
+            print(f"Error type: {type(e)}")
+            print(f"Error message: {str(e)}")
+            raise
+            
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"\nGeneral error:")
+        print(f"Error type: {type(e)}")
+        print(f"Error message: {str(e)}")
+        import traceback
+        print(f"Full traceback:\n{traceback.format_exc()}")
         return None
 
 def save_to_csv(data, filename="system_stats.csv"):
