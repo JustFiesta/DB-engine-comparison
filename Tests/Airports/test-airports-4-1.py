@@ -30,7 +30,7 @@ def test_mariadb_query():
             database='Airports'
         )
         cursor = conn.cursor()
-        query = "SELECT * FROM flights f1 WHERE ARRIVAL_DELAY = ( SELECT MAX(ARRIVAL_DELAY) FROM flights f2 WHERE f1.YEAR = f2.YEAR AND f1.MONTH = f2.MONTH AND f1.DAY = f2.DAY );"
+        query = "SELECT * FROM Flights f1 WHERE ARRIVAL_DELAY = ( SELECT MAX(ARRIVAL_DELAY) FROM Flights f2 WHERE f1.YEAR = f2.YEAR AND f1.MONTH = f2.MONTH AND f1.DAY = f2.DAY );"
 
         start_time = time.time()
 
