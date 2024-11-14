@@ -38,7 +38,7 @@ def test_mariadb_query():
         
         result = cursor.fetchmany(100)  
         while result:
-            print(f"Fetched {len(result)} rows")
+            #print(f"Fetched {len(result)} rows")
             result = cursor.fetchmany(100)
 
         end_time = time.time()
@@ -63,11 +63,11 @@ def test_mongodb_query():
     try:
         client = MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=5000)
         db = client['Bikes']
-        collection = db['Airlines']
+        collection = db['TripUsers']  
         
-        #query = { "STATE": "CA" } 
-        #projection = { "AIRPORT": 1, "CITY": 1, "_id": 0 }  
-
+        query = { "tripduration": { "$gt": 1800 } }
+        projection = {"tripduration": 1, "_id": 0}  
+        
         start_time = time.time()
         print("MongoDB: Executing query...")
 
