@@ -30,7 +30,7 @@ def test_mariadb_query():
             database='Doctors_Appointments'
         )
         cursor = conn.cursor()
-        query = "SELECT * FROM Appointments WHERE appointment_date >= CURDATE() - INTERVAL 1 MONTH;"  
+        query = "SELECT * FROM Appointments WHERE diagnosis = 'Hypertension';"  
         start_time = time.time()
 
         print("MariaDB: Executing query...")
@@ -67,11 +67,8 @@ def test_mongodb_query():
         db = client['Doctors_Appointments']
         collection = db['Appointments']
         
-        import datetime
-        one_month_ago = datetime.datetime.now() - datetime.timedelta(days=30)
-        
         pipeline = [
-            {'$match': {'appointment_date': {'$gte': one_month_ago}}},
+            {'$match': {'diagnosis': 'Hypertension'}},
             {'$project': {'_id': 0}}
         ]
 
@@ -87,12 +84,12 @@ def test_mongodb_query():
         
         client.close()
 
-        return query_time, len(all_results)
+        return query_time
 
     except Exception as e:
         print(f"Error: {e}")
-        return None, 0
-
+        return None
+    
 def save_to_csv(data, filename="system_stats.csv"):
     """Funkcja zapisująca wyniki do pliku CSV"""
     with open(filename, mode='a', newline='') as file:
