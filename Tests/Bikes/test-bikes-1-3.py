@@ -27,7 +27,7 @@ def test_mariadb_query():
             host='localhost',
             user='mariadb',
             password='P@ssw0rd',
-            database='Bikes'
+            database='bikes'
         )
         cursor = conn.cursor()
         query = "SELECT DISTINCT usertype FROM TripUsers;"  
@@ -36,14 +36,15 @@ def test_mariadb_query():
         print("MariaDB: Executing query...")
         cursor.execute(query)
         
+        total_results = 0
         result = cursor.fetchmany(100)  
         while result:
-            print(f"Fetched {len(result)} rows")
+            total_results += len(result)  
             result = cursor.fetchmany(100)
 
         end_time = time.time()
         query_time = end_time - start_time
-        print(f"Query executed in {query_time} seconds.")
+        print(f"Query executed in {query_time} seconds. Total fetched: {total_results} rows.")
         
         cursor.close()
         conn.close()
@@ -63,23 +64,22 @@ def test_mongodb_query():
     try:
         client = MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=5000)
         db = client['Bikes']
-        collection = db['Airlines']
+        collection = db['TripUsers']
         
-        #query = { "STATE": "CA" } 
-        #projection = { "AIRPORT": 1, "CITY": 1, "_id": 0 }  
+        pipeline = [
+            {"$group": {"_id": "$usertype"}},  
+            {"$project": {"usertype": "$_id", "_id": 0}}  
+        ]
 
         start_time = time.time()
         print("MongoDB: Executing query...")
 
-        cursor = collection.find(query, projection)
-        all_results = []
-
-        for doc in cursor:
-            all_results.append(doc)    
+        cursor = collection.aggregate(pipeline)
+        all_results = list(cursor)  
 
         end_time = time.time()
         query_time = end_time - start_time
-        print(f"Query executed in {query_time} seconds. Total fetched: {len(all_results)}")
+        print(f"Query executed in {query_time} seconds. Total fetched: {len(all_results)} unique user types")
 
         client.close()
 
@@ -88,7 +88,6 @@ def test_mongodb_query():
     except Exception as e:
         print(f"Error: {e}")
         return None
-
 
 def save_to_csv(data, filename="system_stats.csv"):
     """Funkcja zapisująca wyniki do pliku CSV"""
