@@ -79,24 +79,42 @@ def test_mongodb_query():
     try:
         client = MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=5000)
         db = client['Doctors_Appointments']
-        collection = db['Appointments']
+        appointments_collection = db['Appointments']
+        doctors_collection = db['Doctors']
+        patients_collection = db['Patients']
         
         pipeline = [
-            {'$group': {
-                '_id': '$diagnosis',
-                'diagnosis_count': {'$count': {}}
-            }},
+            {
+                '$lookup': {
+                    'from': 'Doctors',
+                    'localField': 'doctor_id',
+                    'foreignField': 'doctor_id',
+                    'as': 'doctor'
+                }
+            },
+            {
+                '$lookup': {
+                    'from': 'Patients',
+                    'localField': 'patient_id',
+                    'foreignField': 'patient_id',
+                    'as': 'patient'
+                }
+            },
+            {'$match': {'diagnosis': 'Hypertension'}},
             {'$project': {
                 '_id': 0,
-                'diagnosis': '$_id',
-                'diagnosis_count': 1
+                'appointment_id': 1,
+                'doctor_name': {'$concat': ['$doctor.first_name', ' ', '$doctor.last_name']},
+                'patient_name': {'$concat': ['$patient.first_name', ' ', '$patient.last_name']},
+                'diagnosis': 1,
+                'treatment': 1
             }}
         ]
 
         start_time = time.time()
         print("MongoDB: Executing query...")
 
-        cursor = collection.aggregate(pipeline)
+        cursor = appointments_collection.aggregate(pipeline)
         all_results = list(cursor)
 
         end_time = time.time()
