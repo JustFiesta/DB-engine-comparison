@@ -30,7 +30,7 @@ def test_mariadb_query():
             database='Airports'
         )
         cursor = conn.cursor()
-        query = "SELECT DAY_OF_WEEK, AVG(AIRLINE_DELAY) AS avg_arrival_delay FROM Flights GROUP BY DAY_OF_WEEK;"
+        query = "SELECT DAY_OF_WEEK, AVG(ARRIVAL_DELAY) AS avg_arrival_delay FROM Flights GROUP BY DAY_OF_WEEK;"
 
         start_time = time.time()
 
