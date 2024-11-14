@@ -30,7 +30,7 @@ def test_mariadb_query():
             database='Doctors_Appointments'
         )
         cursor = conn.cursor()
-        query = "SELECT * FROM appointments WHERE appointment_date >= CURDATE() - INTERVAL 1 MONTH;"  
+        query = "SELECT * FROM Appointments WHERE appointment_date >= CURDATE() - INTERVAL 1 MONTH;"  
         start_time = time.time()
 
         print("MariaDB: Executing query...")
