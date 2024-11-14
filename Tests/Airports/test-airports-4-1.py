@@ -63,58 +63,182 @@ def test_mariadb_query():
 def test_mongodb_query():
     """Funkcja do testowania zapytań w MongoDB"""
     try:
-        client = MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=5000)
+        client = MongoClient(
+            'mongodb://localhost:27017/',
+            serverSelectionTimeoutMS=120000,
+            connectTimeoutMS=120000,
+            socketTimeoutMS=120000,
+            maxPoolSize=10,
+            waitQueueTimeoutMS=120000
+        )
+        
+        print("MongoDB: Connected to database")
         db = client['Airports']
-        collection = db['Flights']  
-        print("MongoDB: Executing query...")
+        collection = db['Flights']
 
+        # Tworzenie indeksów dla optymalizacji
+        print("Creating indexes for date fields...")
+        collection.create_index([("YEAR", 1)])
+        collection.create_index([("MONTH", 1)])
+        collection.create_index([("DAY", 1)])
+        collection.create_index([("ARRIVAL_DELAY", 1)])
+
+        # Pipeline dla znalezienia maksymalnych opóźnień
         pipeline = [
             {
+                # Grupowanie po dacie i znalezienie maksymalnego opóźnienia
                 "$group": {
-                    "_id": {"year": "$YEAR", "month": "$MONTH", "day": "$DAY"},
-                    "max_delay": {"$max": "$ARRIVAL_DELAY"}
+                    "_id": {
+                        "year": "$YEAR",
+                        "month": "$MONTH",
+                        "day": "$DAY"
+                    },
+                    "maxDelay": {"$max": "$ARRIVAL_DELAY"},
+                    "count": {"$sum": 1}
                 }
             },
             {
+                # Połączenie z oryginalną kolekcją aby znaleźć pełne informacje o locie
                 "$lookup": {
-                    "from": "flights",
-                    "localField": "max_delay",
-                    "foreignField": "ARRIVAL_DELAY",
-                    "as": "max_delay_flights"
+                    "from": "Flights",
+                    "let": {
+                        "year": "$_id.year",
+                        "month": "$_id.month",
+                        "day": "$_id.day",
+                        "maxDelay": "$maxDelay"
+                    },
+                    "pipeline": [
+                        {
+                            "$match": {
+                                "$expr": {
+                                    "$and": [
+                                        {"$eq": ["$YEAR", "$$year"]},
+                                        {"$eq": ["$MONTH", "$$month"]},
+                                        {"$eq": ["$DAY", "$$day"]},
+                                        {"$eq": ["$ARRIVAL_DELAY", "$$maxDelay"]}
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "$lookup": {
+                                "from": "Airlines",
+                                "localField": "AIRLINE",
+                                "foreignField": "IATA_CODE",
+                                "as": "airline_info"
+                            }
+                        },
+                        {
+                            "$unwind": "$airline_info"
+                        },
+                        {
+                            "$lookup": {
+                                "from": "Airports",
+                                "localField": "ORIGIN_AIRPORT",
+                                "foreignField": "IATA_CODE",
+                                "as": "origin_airport"
+                            }
+                        },
+                        {
+                            "$unwind": "$origin_airport"
+                        },
+                        {
+                            "$lookup": {
+                                "from": "Airports",
+                                "localField": "DESTINATION_AIRPORT",
+                                "foreignField": "IATA_CODE",
+                                "as": "destination_airport"
+                            }
+                        },
+                        {
+                            "$unwind": "$destination_airport"
+                        }
+                    ],
+                    "as": "flight_details"
                 }
             },
-            {"$unwind": "$max_delay_flights"},
             {
-                "$match": {
-                    "$expr": {
-                        "$and": [
-                            {"$eq": ["$_id.year", "$max_delay_flights.YEAR"]},
-                            {"$eq": ["$_id.month", "$max_delay_flights.MONTH"]},
-                            {"$eq": ["$_id.day", "$max_delay_flights.DAY"]}
+                "$unwind": "$flight_details"
+            },
+            {
+                "$project": {
+                    "_id": 0,
+                    "date": {
+                        "$concat": [
+                            {"$toString": "$_id.year"}, "-",
+                            {"$toString": "$_id.month"}, "-",
+                            {"$toString": "$_id.day"}
                         ]
-                    }
+                    },
+                    "maxDelay": "$maxDelay",
+                    "flightNumber": "$flight_details.FLIGHT_NUMBER",
+                    "airline": "$flight_details.airline_info.AIRLINE",
+                    "originAirport": "$flight_details.origin_airport.AIRPORT",
+                    "destinationAirport": "$flight_details.destination_airport.AIRPORT",
+                    "scheduledDeparture": "$flight_details.SCHEDULED_DEPARTURE",
+                    "scheduledArrival": "$flight_details.SCHEDULED_ARRIVAL",
+                    "actualDeparture": "$flight_details.DEPARTURE_TIME",
+                    "actualArrival": "$flight_details.ARRIVAL_TIME"
+                }
+            },
+            {
+                "$sort": {
+                    "date": 1,
+                    "maxDelay": -1
                 }
             }
         ]
+
         start_time = time.time()
-
-        cursor = collection.aggregate(pipeline)
-        all_results = []
-
-        for doc in cursor:
-            all_results.append(doc)  
-
-        end_time = time.time()
-        query_time = end_time - start_time
-        print(f"Query executed in {query_time} seconds. Total fetched: {len(all_results)}")
-
-        client.close()
-
-        return query_time
-
+        print("\nMongoDB: Executing max delays query...")
+        
+        try:
+            cursor = collection.aggregate(
+                pipeline,
+                allowDiskUse=True,
+                batchSize=500,
+                maxTimeMS=1800000
+            )
+            
+            results = []
+            for doc in cursor:
+                results.append(doc)
+            
+            end_time = time.time()
+            query_time = end_time - start_time
+            
+            print(f"\nQuery statistics:")
+            print(f"- Total time: {query_time:.2f} seconds")
+            print(f"- Days processed: {len(results)}")
+            
+            # Wyświetl pierwsze 5 wyników
+            print("\nSample results (first 5 days):")
+            for idx, doc in enumerate(results[:5], 1):
+                print(f"\nDay {idx}:")
+                print(f"Date: {doc['date']}")
+                print(f"Max Delay: {doc['maxDelay']} minutes")
+                print(f"Airline: {doc['airline']}")
+                print(f"Flight: {doc['flightNumber']}")
+                print(f"Route: {doc['originAirport']} -> {doc['destinationAirport']}")
+                print(f"Scheduled: {doc['scheduledDeparture']} -> {doc['scheduledArrival']}")
+                print(f"Actual: {doc['actualDeparture']} -> {doc['actualArrival']}")
+            
+            client.close()
+            return query_time, results
+            
+        except Exception as e:
+            print(f"\nError during query execution:")
+            print(f"Error type: {type(e)}")
+            print(f"Error message: {str(e)}")
+            raise
+            
     except Exception as e:
-        print(f"Error: {e}")
-        return None
+        print(f"\nGeneral error:")
+        print(f"Error type: {type(e)}")
+        print(f"Error message: {str(e)}")
+        import traceback
+        print(f"Full traceback:\n{traceback.format_exc()}")
+        return None, None
 
 def save_to_csv(data, filename="system_stats.csv"):
     """Funkcja zapisująca wyniki do pliku CSV"""
