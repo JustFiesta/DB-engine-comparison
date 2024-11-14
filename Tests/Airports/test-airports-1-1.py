@@ -39,8 +39,8 @@ def test_mariadb_query():
         # Zamiast fetchall(), użyj fetchmany()
         result = cursor.fetchmany(100)  # Pobiera 100 wierszy na raz
         while result:
-            print(f"Fetched {len(result)} rows")
-            #result = cursor.fetchmany(100)
+            #print(f"Fetched {len(result)} rows")
+            result = cursor.fetchmany(100)
 
         end_time = time.time()
         query_time = end_time - start_time
