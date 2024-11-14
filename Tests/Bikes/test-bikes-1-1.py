@@ -67,8 +67,9 @@ def test_mongodb_query():
         db = client['Bikes']
         collection = db['TripUsers']  
         
-        query = { "end_station_name": "Central Park" }
-        projection = {"end_station_name": 1, "_id": 0}
+        query = { "tripduration": { "$gt": 1800 } }
+        projection = {"tripduration": 1, "_id": 0}  
+
         
         start_time = time.time()
         print("MongoDB: Executing query...")
