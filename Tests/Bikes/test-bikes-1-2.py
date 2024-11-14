@@ -30,7 +30,7 @@ def test_mariadb_query():
             database='bikes'
         )
         cursor = conn.cursor()
-        query = "SELECT * FROM TripUsers WHERE end_station_name = 'Central Park';"  
+        query = "SELECT * FROM TripUsers WHERE end_station_name = 'Newport Pkwy';"  
         start_time = time.time()
 
         print("MariaDB: Executing query...")
@@ -65,8 +65,8 @@ def test_mongodb_query():
         db = client['Bikes']
         collection = db['Airlines']
         
-        #query = { "STATE": "CA" } 
-        #projection = { "AIRPORT": 1, "CITY": 1, "_id": 0 }  
+        query = { "end_station_name": "Newport Pkwy" }
+        projection = {"end_station_name": 1, "_id": 0}  
 
         start_time = time.time()
         print("MongoDB: Executing query...")
