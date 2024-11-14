@@ -170,8 +170,8 @@ def test_mongodb_query():
             results_count = 0
             for _ in cursor:
                 results_count += 1
-                if results_count % 5000 == 0:  # Zmniejszona częstotliwość raportowania
-                    print(f"Processed {results_count} documents...")
+                #if results_count % 5000 == 0:  # Zmniejszona częstotliwość raportowania
+                    #print(f"Processed {results_count} documents...")
                     
             end_time = time.time()
             query_time = end_time - start_time
