@@ -38,7 +38,7 @@ def test_mariadb_query():
         
         result = cursor.fetchmany(100)  
         while result:
-            print(f"Fetched {len(result)} rows")
+           #print(f"Fetched {len(result)} rows")
             result = cursor.fetchmany(100)
 
         end_time = time.time()
@@ -78,7 +78,7 @@ def test_mongodb_query():
 
         for doc in cursor:
             all_results.append(doc)  
-            print(f"Fetched airline: {doc['AIRLINE']}")  
+            #print(f"Fetched airline: {doc['AIRLINE']}")  
 
         end_time = time.time()
         query_time = end_time - start_time

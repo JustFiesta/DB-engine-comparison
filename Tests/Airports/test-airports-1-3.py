@@ -38,7 +38,7 @@ def test_mariadb_query():
         
         result = cursor.fetchmany(100)  
         while result:
-            print(f"Fetched {len(result)} rows")
+            #print(f"Fetched {len(result)} rows")
             result = cursor.fetchmany(100)
 
         end_time = time.time()

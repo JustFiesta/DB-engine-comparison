@@ -77,8 +77,8 @@ def test_mongodb_query():
         # Możesz kontrolować ilość wyników w jednym cyklu
         for doc in cursor:
             all_results.append(doc)  # Możesz też przetwarzać każdy dokument w tym miejscu
-            if len(all_results) % 100 == 0:  # Przykładowo co 100 wyników
-                print(f"Fetched {len(all_results)} rows")
+            #if len(all_results) % 100 == 0:  # Przykładowo co 100 wyników
+            #    print(f"Fetched {len(all_results)} rows")
 
         end_time = time.time()
         query_time = end_time - start_time
