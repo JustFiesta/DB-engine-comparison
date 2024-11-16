@@ -77,11 +77,16 @@ def test_mariadb_query():
 def test_mongodb_query():
     """Funkcja do testowania zapytań w MongoDB"""
     try:
-        client = MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=5000)
+        client = MongoClient('mongodb://localhost:27017/', 
+                           serverSelectionTimeoutMS=5000,
+                           maxPoolSize=50)  
         db = client['Doctors_Appointments']
         appointments_collection = db['Appointments']
         
         pipeline = [
+            {
+                '$match': {'diagnosis': 'Hypertension'}  
+            },
             {
                 '$lookup': {
                     'from': 'Doctors',
@@ -98,57 +103,67 @@ def test_mongodb_query():
                     'as': 'patient'
                 }
             },
-            # Rozwinięcie tablic doctor i patient
             {
                 '$unwind': '$doctor'
             },
             {
                 '$unwind': '$patient'
             },
-            {'$match': {'diagnosis': 'Hypertension'}},
-            {'$project': {
-                '_id': 0,
-                'appointment_id': 1,
-                'doctor_name': {
-                    '$concat': [
-                        '$doctor.first_name', 
-                        ' ', 
-                        '$doctor.last_name'
-                    ]
-                },
-                'patient_name': {
-                    '$concat': [
-                        '$patient.first_name',
-                        ' ',
-                        '$patient.last_name'
-                    ]
-                },
-                'diagnosis': 1,
-                'treatment': 1
-            }}
+            {
+                '$project': {
+                    '_id': 0,
+                    'appointment_id': 1,
+                    'doctor_name': {
+                        '$concat': [
+                            '$doctor.first_name', 
+                            ' ', 
+                            '$doctor.last_name'
+                        ]
+                    },
+                    'patient_name': {
+                        '$concat': [
+                            '$patient.first_name',
+                            ' ',
+                            '$patient.last_name'
+                        ]
+                    },
+                    'diagnosis': 1,
+                    'treatment': 1
+                }
+            }
         ]
 
         start_time = time.time()
         print("MongoDB: Executing query...")
 
-        cursor = appointments_collection.aggregate(pipeline)
-        all_results = list(cursor)
+        cursor = appointments_collection.aggregate(
+            pipeline,
+            allowDiskUse=True,  
+            batchSize=100      
+        )
 
+        total_results = 0
+        results_buffer = []
+        
         for doc in cursor:
-            all_results.append(doc)  
-            if len(all_results) % 1000 == 0:  
-                print(f"Fetched {len(all_results)} rows")
+            results_buffer.append(doc)
+            total_results += 1
+            
+            if len(results_buffer) >= 100:
+                print(f"Fetched {total_results} rows")
+                results_buffer = [] 
+                
         end_time = time.time()
         query_time = end_time - start_time
-        print(f"Query executed in {query_time} seconds. Total results: {len(all_results)}")
+        print(f"Query executed in {query_time} seconds. Total results: {total_results}")
         
         client.close()
 
-        return query_time
+        return query_time, total_results
 
     except Exception as e:
         print(f"Error: {e}")
-        return None
+        return None, 0
     
 def save_to_csv(data, filename="system_stats.csv"):
     """Funkcja zapisująca wyniki do pliku CSV"""
