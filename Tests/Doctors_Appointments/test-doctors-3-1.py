@@ -80,8 +80,6 @@ def test_mongodb_query():
         client = MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=5000)
         db = client['Doctors_Appointments']
         appointments_collection = db['Appointments']
-        doctors_collection = db['Doctors']
-        patients_collection = db['Patients']
         
         pipeline = [
             {
@@ -100,12 +98,31 @@ def test_mongodb_query():
                     'as': 'patient'
                 }
             },
+            # Rozwinięcie tablic doctor i patient
+            {
+                '$unwind': '$doctor'
+            },
+            {
+                '$unwind': '$patient'
+            },
             {'$match': {'diagnosis': 'Hypertension'}},
             {'$project': {
                 '_id': 0,
                 'appointment_id': 1,
-                'doctor_name': {'$concat': ['$doctor.first_name', ' ', '$doctor.last_name']},
-                'patient_name': {'$concat': ['$patient.first_name', ' ', '$patient.last_name']},
+                'doctor_name': {
+                    '$concat': [
+                        '$doctor.first_name', 
+                        ' ', 
+                        '$doctor.last_name'
+                    ]
+                },
+                'patient_name': {
+                    '$concat': [
+                        '$patient.first_name',
+                        ' ',
+                        '$patient.last_name'
+                    ]
+                },
                 'diagnosis': 1,
                 'treatment': 1
             }}
