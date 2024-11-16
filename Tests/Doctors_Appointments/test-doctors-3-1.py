@@ -134,6 +134,10 @@ def test_mongodb_query():
         cursor = appointments_collection.aggregate(pipeline)
         all_results = list(cursor)
 
+        for doc in cursor:
+            all_results.append(doc)  
+            if len(all_results) % 1000 == 0:  
+                print(f"Fetched {len(all_results)} rows")
         end_time = time.time()
         query_time = end_time - start_time
         print(f"Query executed in {query_time} seconds. Total results: {len(all_results)}")
