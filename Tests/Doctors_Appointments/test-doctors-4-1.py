@@ -30,11 +30,13 @@ def test_mariadb_query():
             database='Doctors_Appointments'
         )
         cursor = conn.cursor()
-        query = """SELECT 
-        d.specialization, COUNT(a.appointment_id) AS appointment_count
-        FROM Doctors d
-        LEFT JOIN Appointments a ON d.doctor_id = a.doctor_id
-        GROUP BY d.specialization;
+        query = """SELECT first_name, last_name
+        FROM Patients
+        WHERE patient_id IN (
+            SELECT patient_id
+            FROM Appointments a
+            JOIN Doctors d ON a.doctor_id = d.doctor_id
+            WHERE d.specialization = 'Cardiology'
         """  
         start_time = time.time()
 
@@ -65,46 +67,86 @@ def test_mariadb_query():
 def test_mongodb_query():
     """Funkcja do testowania zapytań w MongoDB"""
     try:
-        client = MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=5000)
+        client = MongoClient('mongodb://localhost:27017/', 
+                           serverSelectionTimeoutMS=5000,
+                           maxPoolSize=50)  
         db = client['Doctors_Appointments']
-        doctors_collection = db['Doctors']
         appointments_collection = db['Appointments']
         
         pipeline = [
-            {'$lookup': {
-                'from': 'Appointments',
-                'localField': 'doctor_id',
-                'foreignField': 'doctor_id',
-                'as': 'appointments'
-            }},
-            {'$group': {
-                '_id': '$specialization',
-                'appointment_count': {'$count': {}}
-            }},
-            {'$project': {
-                '_id': 0,
-                'specialization': '$_id',
-                'appointment_count': 1
-            }}
+            {
+                '$lookup': {
+                    'from': 'Doctors',
+                    'localField': 'doctor_id',
+                    'foreignField': 'doctor_id',
+                    'as': 'doctor'
+                }
+            },
+            {
+                '$unwind': '$doctor'
+            },
+            {
+                '$match': {
+                    'doctor.specialization': 'Cardiology'
+                }
+            },
+            {
+                '$lookup': {
+                    'from': 'Patients',
+                    'localField': 'patient_id',
+                    'foreignField': 'patient_id',
+                    'as': 'patient'
+                }
+            },
+            {
+                '$unwind': '$patient'
+            },
+            {
+                '$project': {
+                    '_id': 0,
+                    'first_name': '$patient.first_name',
+                    'last_name': '$patient.last_name'
+                }
+            },
+            {
+                '$group': {
+                    '_id': {
+                        'first_name': '$first_name',
+                        'last_name': '$last_name'
+                    },
+                    'first_name': {'$first': '$first_name'},
+                    'last_name': {'$first': '$last_name'}
+                }
+            }
         ]
 
         start_time = time.time()
         print("MongoDB: Executing query...")
 
-        cursor = doctors_collection.aggregate(pipeline)
-        all_results = list(cursor)
+        cursor = appointments_collection.aggregate(
+            pipeline,
+            allowDiskUse=True,  
+            batchSize=100      
+        )
 
+        total_results = 0
+        results_buffer = []
+        
+        for doc in cursor:
+            results_buffer.append(doc)
+            total_results += 1
+                
         end_time = time.time()
         query_time = end_time - start_time
-        print(f"Query executed in {query_time} seconds. Total results: {len(all_results)}")
+        print(f"Query executed in {query_time} seconds. Total results: {total_results}")
         
         client.close()
 
-        return query_time
+        return query_time, total_results
 
     except Exception as e:
         print(f"Error: {e}")
-        return None
+        return None, 0
     
 def save_to_csv(data, filename="system_stats.csv"):
     """Funkcja zapisująca wyniki do pliku CSV"""
