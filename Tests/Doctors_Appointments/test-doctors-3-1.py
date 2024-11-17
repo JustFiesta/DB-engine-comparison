@@ -43,7 +43,7 @@ def test_mariadb_query():
         JOIN 
             Patients p ON a.patient_id = p.patient_id
         WHERE 
-            a.diagnosis = 'Hypertension';
+            a.diagnosis = 'Hypertension' AND d.doctor_id = 6970;
         """  
         start_time = time.time()
 
@@ -85,7 +85,10 @@ def test_mongodb_query():
         
         pipeline = [
             {
-                '$match': {'diagnosis': 'Hypertension'}  
+                '$match': {
+                    'diagnosis': 'Hypertension',
+                    'doctor_id' : '6970'
+                }  
             },
             {
                 '$lookup': {
