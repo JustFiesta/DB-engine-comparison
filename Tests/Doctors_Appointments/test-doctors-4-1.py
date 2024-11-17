@@ -45,7 +45,11 @@ def test_mariadb_query():
         cursor.execute(query)
         
         total_results = 0
-        result = cursor.fetchmany(100)  
+        while True:
+            result = cursor.fetchmany(100)
+            if not result:
+                break
+            total_results += len(result)
 
         end_time = time.time()
         query_time = end_time - start_time
