@@ -68,7 +68,7 @@ def test_step_by_step():
         pipeline3 = [
             {
                 '$match': {
-                    'doctor_id': {'$in': cardio_ids}
+                    'doctor_id': {'$in': cardio_ids},
                 }
             },
             {
@@ -80,21 +80,28 @@ def test_step_by_step():
                 }
             },
             {
-                '$unwind': '$patient'
+                '$unwind': {
+                    'path': '$patient',
+                    'preserveNullAndEmptyArrays': True
+                }
             },
             {
-                '$group': {
-                    '_id': {
-                        'patient_id': '$patient_id'
-                    },
-                    'first_name': {'$first': '$patient.first_name'},
-                    'last_name': {'$first': '$patient.last_name'}
+                '$project': {
+                    'patient_id': 1,
+                    'patient_first_name': '$patient.first_name',
+                    'patient_last_name': '$patient.last_name',
+                    'doctor_id': 1,
+                    '_id': 0
                 }
             },
             {
                 '$limit': 5
             }
         ]
+
+        results3 = list(db['Appointments'].aggregate(pipeline3))
+        print(f"Wyniki: {results3}")
+
         
         results3 = list(db['Appointments'].aggregate(pipeline3))
         print(f"Wyniki pełnego pipeline z limitem (5): {len(results3)}")
