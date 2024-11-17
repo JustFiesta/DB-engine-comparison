@@ -86,7 +86,7 @@ def test_mongodb_query():
         pipeline = [
             {
                 '$match': {
-                    'doctor_id' : '6970'
+                    'doctor_id' : 6970
                 }  
             },
             {
