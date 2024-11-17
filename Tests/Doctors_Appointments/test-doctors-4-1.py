@@ -68,20 +68,38 @@ def test_mariadb_query():
         print(f"General error: {e}")
         return None, 0
 
-def test_mongodb_query():
-    """Funkcja do testowania zapytań w MongoDB"""
+def test_mongodb_query_debug():
+    """Funkcja do debugowania zapytania MongoDB"""
     try:
         client = MongoClient('mongodb://localhost:27017/', 
-                           serverSelectionTimeoutMS=5000,
-                           maxPoolSize=50)
+                           serverSelectionTimeoutMS=5000)
         db = client['Doctors_Appointments']
         appointments_collection = db['Appointments']
         
-        appointments_collection.create_index([("doctor_id", 1)])
-        appointments_collection.create_index([("patient_id", 1)])
-        db['Doctors'].create_index([("specialization", 1)])
+        # Test 1: Znajdź kardiologów
+        print("Test 1: Szukam kardiologów...")
+        cardio_docs = list(db['Doctors'].find({'specialization': 'Cardiology'}))
+        print(f"Znaleziono {len(cardio_docs)} kardiologów")
         
-        pipeline = [
+        # Test 2: Znajdź wizyty u kardiologów
+        print("\nTest 2: Szukam wizyt u kardiologów...")
+        cardio_ids = [doc['doctor_id'] for doc in cardio_docs]
+        appointments = list(appointments_collection.find({'doctor_id': {'$in': cardio_ids}}).limit(5))
+        print(f"Przykładowe wizyty (limit 5): {len(appointments)}")
+        
+        # Test 3: Znajdź pacjentów z tych wizyt
+        if appointments:
+            print("\nTest 3: Szukam pacjentów...")
+            patient_ids = [app['patient_id'] for app in appointments]
+            patients = list(db['Patients'].find(
+                {'patient_id': {'$in': patient_ids}},
+                {'first_name': 1, 'last_name': 1}
+            ).limit(5))
+            print(f"Przykładowi pacjenci (limit 5): {len(patients)}")
+        
+        # Test 4: Proste agregacje
+        print("\nTest 4: Testuje prostą agregację...")
+        pipeline_simple = [
             {
                 '$lookup': {
                     'from': 'Doctors',
@@ -91,11 +109,42 @@ def test_mongodb_query():
                 }
             },
             {
-                '$unwind': '$doctor'
-            },
+                '$limit': 5
+            }
+        ]
+        
+        simple_results = list(appointments_collection.aggregate(pipeline_simple))
+        print(f"Prosta agregacja (limit 5): {len(simple_results)}")
+        
+        client.close()
+        return True
+        
+    except Exception as e:
+        print(f"Błąd podczas debugowania: {e}")
+        return False
+
+def test_mongodb_query_optimized():
+    """Zoptymalizowana wersja oryginalnego zapytania"""
+    try:
+        client = MongoClient('mongodb://localhost:27017/', 
+                           serverSelectionTimeoutMS=5000)
+        db = client['Doctors_Appointments']
+        
+        # Najpierw znajdź ID kardiologów
+        cardio_ids = [doc['doctor_id'] for doc in db['Doctors'].find(
+            {'specialization': 'Cardiology'},
+            {'doctor_id': 1}
+        )]
+        
+        if not cardio_ids:
+            print("Nie znaleziono kardiologów!")
+            return None, 0
+            
+        # Następnie znajdź wizyty tylko dla tych lekarzy
+        pipeline = [
             {
                 '$match': {
-                    'doctor.specialization': 'Cardiology'
+                    'doctor_id': {'$in': cardio_ids}
                 }
             },
             {
@@ -110,45 +159,39 @@ def test_mongodb_query():
                 '$unwind': '$patient'
             },
             {
-                '$project': {
-                    'first_name': '$patient.first_name',
-                    'last_name': '$patient.last_name',
-                    '_id': 0
-                }
-            },
-            {
                 '$group': {
                     '_id': {
-                        'first_name': '$first_name',
-                        'last_name': '$last_name'
+                        'patient_id': '$patient_id'
                     },
-                    'first_name': {'$first': '$first_name'},
-                    'last_name': {'$first': '$last_name'}
+                    'first_name': {'$first': '$patient.first_name'},
+                    'last_name': {'$first': '$patient.last_name'}
                 }
             }
         ]
-
+        
         start_time = time.time()
         print("MongoDB: Executing query...")
-
-        cursor = appointments_collection.aggregate(
+        
+        cursor = db['Appointments'].aggregate(
             pipeline,
             allowDiskUse=True,
-            batchSize=1000  
+            batchSize=100
         )
-
+        
         total_results = 0
-        for _ in cursor:  
+        for _ in cursor:
             total_results += 1
+            if total_results % 100 == 0:  # Logowanie postępu
+                print(f"Przetworzono {total_results} wyników...")
                 
         end_time = time.time()
         query_time = end_time - start_time
+        
         print(f"Query executed in {query_time} seconds. Total results: {total_results}")
         
         client.close()
-
         return query_time, total_results
-
+        
     except Exception as e:
         print(f"Error: {e}")
         return None, 0
