@@ -3,7 +3,8 @@ from pymongo import MongoClient
 
 def test_step_by_step():
     try:
-        client = MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=5000)
+        client = MongoClient('mongodb://localhost:27017/', 
+                           serverSelectionTimeoutMS=5000)
         db = client['Doctors_Appointments']
         
         # Krok 1: Znajdź kardiologów
@@ -64,52 +65,43 @@ def test_step_by_step():
         print(f"Przykładowe wizyty z pacjentami (5): {len(results2)}")
         
         # Etap 3: Pełne zapytanie z limitem
-        # print("\nEtap 3: Testowanie pełnego pipeline z limitem...")
-        # pipeline3 = [
-        #     {
-        #         '$match': {
-        #             'doctor_id': {'$in': cardio_ids},
-        #         }
-        #     },
-        #     {
-        #         '$lookup': {
-        #             'from': 'Patients',
-        #             'localField': 'patient_id',
-        #             'foreignField': 'patient_id',
-        #             'as': 'patient'
-        #         }
-        #     },
-        #     {
-        #         '$unwind': {
-        #             'path': '$patient',
-        #             'preserveNullAndEmptyArrays': True
-        #         }
-        #     },
-        #     {
-        #         '$project': {
-        #             'patient_id': 1,
-        #             'patient_first_name': '$patient.first_name',
-        #             'patient_last_name': '$patient.last_name',
-        #             'doctor_id': 1,
-        #             '_id': 0
-        #         }
-        #     },
-        #     {
-        #         '$limit': 5
-        #     }
-        # ]
-
-        # results3 = list(db['Appointments'].aggregate(pipeline3))
-        # print(f"Wyniki: {results3}")
-
+        print("\nEtap 3: Testowanie pełnego pipeline z limitem...")
+        pipeline3 = [
+            {
+                '$match': {
+                    'doctor_id': {'$in': cardio_ids}
+                }
+            },
+            {
+                '$lookup': {
+                    'from': 'Patients',
+                    'localField': 'patient_id',
+                    'foreignField': 'patient_id',
+                    'as': 'patient'
+                }
+            },
+            {
+                '$unwind': '$patient'
+            },
+            {
+                '$group': {
+                    '_id': {
+                        'patient_id': '$patient_id'
+                    },
+                    'first_name': {'$first': '$patient.first_name'},
+                    'last_name': {'$first': '$patient.last_name'}
+                }
+            },
+            {
+                '$limit': 5
+            }
+        ]
         
-        # results3 = list(db['Appointments'].aggregate(pipeline3))
-        # print(f"Wyniki pełnego pipeline z limitem (5): {len(results3)}")
+        results3 = list(db['Appointments'].aggregate(pipeline3))
+        print(f"Wyniki pełnego pipeline z limitem (5): {len(results3)}")
         
         # Etap 4: Pełne zapytanie porcjami
         print("\nEtap 4: Wykonywanie pełnego zapytania porcjami...")
-        batch_size = 100  # Ustaw rozmiar batcha
-        total_processed = 0
         pipeline_final = [
             {
                 '$match': {
@@ -142,30 +134,26 @@ def test_step_by_step():
         cursor = db['Appointments'].aggregate(
             pipeline_final,
             allowDiskUse=True,
-            batchSize=batch_size
+            batchSize=100
         )
         
         print("Rozpoczynam przetwarzanie wyników...")
+        total_results = 0
         try:
             for doc in cursor:
-                total_processed += 1
-                
-                # Wyświetlaj co 10 wyników dla debugowania
-                if total_processed % 10 == 0:
-                    elapsed_time = time.time() - start_time
-                    print(f"Przetworzono {total_processed} wyników w {elapsed_time:.2f} sekund")
-                
-                # Opcjonalnie wyświetl pierwsze 5 wyników
-                if total_processed <= 5:
-                    print(doc)
-
+                total_results += 1
+                if total_results % 100 == 0:
+                    current_time = time.time()
+                    elapsed_time = current_time - start_time
+                    print(f"Przetworzono {total_results} wyników w {elapsed_time:.2f} sekund")
+                    
         except Exception as e:
             print(f"Błąd podczas przetwarzania wyników: {e}")
         
         end_time = time.time()
         total_time = end_time - start_time
         print(f"\nCałkowity czas: {total_time:.2f} sekund")
-        print(f"Całkowita liczba wyników: {total_processed}")
+        print(f"Całkowita liczba wyników: {total_results}")
         
         client.close()
         
