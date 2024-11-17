@@ -134,11 +134,11 @@ def test_mongodb_query():
         cursor = appointments_collection.aggregate(
             pipeline,
             allowDiskUse=True,
-            batchSize=1000 
+            batchSize=1000  
         )
 
         total_results = 0
-        for _ in cursor: 
+        for _ in cursor:  
             total_results += 1
                 
         end_time = time.time()
