@@ -64,47 +64,47 @@ def test_step_by_step():
         print(f"Przykładowe wizyty z pacjentami (5): {len(results2)}")
         
         # Etap 3: Pełne zapytanie z limitem
-        print("\nEtap 3: Testowanie pełnego pipeline z limitem...")
-        pipeline3 = [
-            {
-                '$match': {
-                    'doctor_id': {'$in': cardio_ids},
-                }
-            },
-            {
-                '$lookup': {
-                    'from': 'Patients',
-                    'localField': 'patient_id',
-                    'foreignField': 'patient_id',
-                    'as': 'patient'
-                }
-            },
-            {
-                '$unwind': {
-                    'path': '$patient',
-                    'preserveNullAndEmptyArrays': True
-                }
-            },
-            {
-                '$project': {
-                    'patient_id': 1,
-                    'patient_first_name': '$patient.first_name',
-                    'patient_last_name': '$patient.last_name',
-                    'doctor_id': 1,
-                    '_id': 0
-                }
-            },
-            {
-                '$limit': 5
-            }
-        ]
+        # print("\nEtap 3: Testowanie pełnego pipeline z limitem...")
+        # pipeline3 = [
+        #     {
+        #         '$match': {
+        #             'doctor_id': {'$in': cardio_ids},
+        #         }
+        #     },
+        #     {
+        #         '$lookup': {
+        #             'from': 'Patients',
+        #             'localField': 'patient_id',
+        #             'foreignField': 'patient_id',
+        #             'as': 'patient'
+        #         }
+        #     },
+        #     {
+        #         '$unwind': {
+        #             'path': '$patient',
+        #             'preserveNullAndEmptyArrays': True
+        #         }
+        #     },
+        #     {
+        #         '$project': {
+        #             'patient_id': 1,
+        #             'patient_first_name': '$patient.first_name',
+        #             'patient_last_name': '$patient.last_name',
+        #             'doctor_id': 1,
+        #             '_id': 0
+        #         }
+        #     },
+        #     {
+        #         '$limit': 5
+        #     }
+        # ]
 
-        results3 = list(db['Appointments'].aggregate(pipeline3))
-        print(f"Wyniki: {results3}")
+        # results3 = list(db['Appointments'].aggregate(pipeline3))
+        # print(f"Wyniki: {results3}")
 
         
-        results3 = list(db['Appointments'].aggregate(pipeline3))
-        print(f"Wyniki pełnego pipeline z limitem (5): {len(results3)}")
+        # results3 = list(db['Appointments'].aggregate(pipeline3))
+        # print(f"Wyniki pełnego pipeline z limitem (5): {len(results3)}")
         
         # Etap 4: Pełne zapytanie porcjami
         print("\nEtap 4: Wykonywanie pełnego zapytania porcjami...")
