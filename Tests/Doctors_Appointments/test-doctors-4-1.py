@@ -31,12 +31,13 @@ def test_mariadb_query():
         )
         cursor = conn.cursor()
         query = """SELECT first_name, last_name
-        FROM Patients
-        WHERE patient_id IN (
-            SELECT patient_id
-            FROM Appointments a
-            JOIN Doctors d ON a.doctor_id = d.doctor_id
-            WHERE d.specialization = 'Cardiology');
+            FROM Patients
+            WHERE patient_id IN (
+                SELECT patient_id
+                FROM Appointments a
+                JOIN Doctors d ON a.doctor_id = d.doctor_id
+                WHERE d.specialization = 'Cardiology'
+            );
         """  
         start_time = time.time()
 
