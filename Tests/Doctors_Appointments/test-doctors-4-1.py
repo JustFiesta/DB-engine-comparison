@@ -68,15 +68,18 @@ def test_mariadb_query():
         print(f"General error: {e}")
         return None, 0
 
-
 def test_mongodb_query():
     """Funkcja do testowania zapytań w MongoDB"""
     try:
         client = MongoClient('mongodb://localhost:27017/', 
                            serverSelectionTimeoutMS=5000,
-                           maxPoolSize=50)  
+                           maxPoolSize=50)
         db = client['Doctors_Appointments']
         appointments_collection = db['Appointments']
+        
+        appointments_collection.create_index([("doctor_id", 1)])
+        appointments_collection.create_index([("patient_id", 1)])
+        db['Doctors'].create_index([("specialization", 1)])
         
         pipeline = [
             {
@@ -108,9 +111,9 @@ def test_mongodb_query():
             },
             {
                 '$project': {
-                    '_id': 0,
                     'first_name': '$patient.first_name',
-                    'last_name': '$patient.last_name'
+                    'last_name': '$patient.last_name',
+                    '_id': 0
                 }
             },
             {
@@ -130,15 +133,12 @@ def test_mongodb_query():
 
         cursor = appointments_collection.aggregate(
             pipeline,
-            allowDiskUse=True,  
-            batchSize=100      
+            allowDiskUse=True,
+            batchSize=1000 
         )
 
         total_results = 0
-        results_buffer = []
-        
-        for doc in cursor:
-            results_buffer.append(doc)
+        for _ in cursor: 
             total_results += 1
                 
         end_time = time.time()
