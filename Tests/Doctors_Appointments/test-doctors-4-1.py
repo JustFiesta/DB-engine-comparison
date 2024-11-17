@@ -36,7 +36,7 @@ def test_mariadb_query():
             SELECT patient_id
             FROM Appointments a
             JOIN Doctors d ON a.doctor_id = d.doctor_id
-            WHERE d.specialization = 'Cardiology'
+            WHERE d.specialization = 'Cardiology';
         """  
         start_time = time.time()
 
