@@ -66,10 +66,41 @@ def test_step_by_step():
         
         # Etap 3: Pełne zapytanie z limitem
         print("\nEtap 3: Testowanie pełnego pipeline z limitem...")
+        # pipeline3 = [
+        #     {
+        #         '$match': {
+        #             'doctor_id': {'$in': cardio_ids}
+        #         }
+        #     },
+        #     {
+        #         '$lookup': {
+        #             'from': 'Patients',
+        #             'localField': 'patient_id',
+        #             'foreignField': 'patient_id',
+        #             'as': 'patient'
+        #         }
+        #     },
+        #     {
+        #         '$unwind': '$patient'
+        #     },
+        #     {
+        #         '$group': {
+        #             '_id': {
+        #                 'patient_id': '$patient_id'
+        #             },
+        #             'first_name': {'$first': '$patient.first_name'},
+        #             'last_name': {'$first': '$patient.last_name'}
+        #         }
+        #     },
+        #     {
+        #         '$limit': 5
+        #     }
+        # ]
         pipeline3 = [
             {
                 '$match': {
-                    'doctor_id': {'$in': cardio_ids}
+                    'doctor_id': {'$in': cardio_ids},
+                    'patient_id': {'$ne': None}  # Filtruj brakujące ID pacjentów
                 }
             },
             {
@@ -81,21 +112,28 @@ def test_step_by_step():
                 }
             },
             {
-                '$unwind': '$patient'
+                '$unwind': {
+                    'path': '$patient',
+                    'preserveNullAndEmptyArrays': True
+                }
             },
             {
-                '$group': {
-                    '_id': {
-                        'patient_id': '$patient_id'
-                    },
-                    'first_name': {'$first': '$patient.first_name'},
-                    'last_name': {'$first': '$patient.last_name'}
+                '$project': {
+                    'patient_id': 1,
+                    'patient_first_name': '$patient.first_name',
+                    'patient_last_name': '$patient.last_name',
+                    'doctor_id': 1,
+                    '_id': 0
                 }
             },
             {
                 '$limit': 5
             }
         ]
+
+        results3 = list(db['Appointments'].aggregate(pipeline3))
+        print(f"Wyniki: {results3}")
+
         
         results3 = list(db['Appointments'].aggregate(pipeline3))
         print(f"Wyniki pełnego pipeline z limitem (5): {len(results3)}")
