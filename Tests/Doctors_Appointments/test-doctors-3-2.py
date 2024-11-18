@@ -40,7 +40,10 @@ def test_mariadb_query():
         ON 
             a.doctor_id = d.doctor_id
         WHERE 
-            a.diagnosis = 'Cold';
+            a.diagnosis = 'Cold'
+        GROUP BY 
+            d.first_name, 
+            d.last_name;   
         """  
         start_time = time.time()
 
@@ -87,6 +90,12 @@ def test_mongodb_query():
                 'as': 'doctor'
             }},
             {'$unwind': '$doctor'},
+             {'$group': {
+                '_id': {
+                    'first_name': '$doctor.first_name',
+                    'last_name': '$doctor.last_name'
+                }
+            }},
             {'$project': {
                 'first_name': '$_id.first_name',
                 'last_name': '$_id.last_name',
