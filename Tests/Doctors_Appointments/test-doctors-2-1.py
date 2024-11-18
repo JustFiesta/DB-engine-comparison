@@ -59,7 +59,6 @@ def test_mariadb_query():
         print(f"General error: {e}")
         return None, 0
 
-
 def test_mongodb_query():
     """Funkcja do testowania zapytań w MongoDB"""
     try:
@@ -68,15 +67,41 @@ def test_mongodb_query():
         collection = db['Patients']
         
         pipeline = [
-            {'$group': {
-                '_id': {'$year': '$birthdate'},
-                'patient_count': {'$count': {}}
-            }},
-            {'$project': {
-                '_id': 0,
-                'birth_year': '$_id',
-                'patient_count': 1
-            }}
+            {
+                '$addFields': {
+                    'converted_date': {
+                        '$cond': {
+                            'if': {'$type': '$birthdate'}, 
+                            'then': {
+                                '$cond': {
+                                    'if': {'$eq': [{'$type': '$birthdate'}, 'string']},
+                                    'then': {'$dateFromString': {'dateString': '$birthdate'}},
+                                    'else': '$birthdate'
+                                }
+                            },
+                            'else': None
+                        }
+                    }
+                }
+            },
+            {
+                '$group': {
+                    '_id': {'$year': '$converted_date'},
+                    'patient_count': {'$sum': 1}
+                }
+            },
+            {
+                '$match': {
+                    '_id': {'$ne': None}
+                }
+            },
+            {
+                '$project': {
+                    '_id': 0,
+                    'birth_year': '$_id',
+                    'patient_count': 1
+                }
+            }
         ]
 
         start_time = time.time()
@@ -94,7 +119,7 @@ def test_mongodb_query():
         return query_time
 
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"MongoDB Error: {e}")
         return None
     
 def save_to_csv(data, filename="system_stats.csv"):
@@ -111,16 +136,12 @@ def test_database_performance():
     Wykonuje zapytania do baz danych, zbiera statystyki systemowe
     i zapisuje wynik w pliku CSV.
     """
-    # Testowanie MariaDB
     mariadb_query_time = test_mariadb_query()  
 
-    # Testowanie MongoDB
     mongodb_query_time = test_mongodb_query() 
 
-    # Zbieranie statystyk systemowych
     system_stats = collect_system_stats()
     
-    # Dodanie danych do statystyk
     system_stats['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
 
     if mariadb_query_time is not None:
