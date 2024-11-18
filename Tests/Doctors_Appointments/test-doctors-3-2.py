@@ -87,7 +87,7 @@ def test_mongodb_query():
                 'as': 'doctor'
             }},
             {'$lookup': {
-                'from': '{atients',
+                'from': 'Patients',
                 'localField': 'patient_id',
                 'foreignField': 'patient_id',
                 'as': 'patient'
