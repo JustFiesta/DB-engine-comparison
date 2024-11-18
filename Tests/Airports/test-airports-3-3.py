@@ -128,7 +128,7 @@ def test_mongodb_query():
                     "airline_name": "$airline_info.AIRLINE",
                     "origin_airport": "$origin_airport.AIRPORT",
                     "destination_airport": "$destination_airport.AIRPORT",
-                    "arrival_delay": "$ARRIVAL_DELAY", y
+                    "arrival_delay": "$ARRIVAL_DELAY",
                     "_id": 0
                 }
             },
