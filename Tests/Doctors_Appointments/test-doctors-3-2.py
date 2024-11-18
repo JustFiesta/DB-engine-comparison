@@ -80,7 +80,7 @@ def test_mongodb_query():
         doctors_collection = db['Appointments']
         
         pipeline = [
-            {'$match': {'diagnosis': 'Flu'}},
+            {'$match': {'diagnosis': 'Cold'}},
             {'$lookup': {
                 'from': 'Doctors',
                 'localField': 'doctor_id',
