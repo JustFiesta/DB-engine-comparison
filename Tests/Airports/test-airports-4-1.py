@@ -31,21 +31,17 @@ def test_mariadb_query():
         )
         cursor = conn.cursor()
         query = """SELECT 
-                f.AIRLINE,
-                a.AIRLINE as AIRLINE_NAME,
-                f.MONTH,
-                ROUND(AVG(f.ARRIVAL_DELAY), 2) as AVG_DELAY,
-                COUNT(*) as FLIGHT_COUNT,
-                ROUND(AVG(f.DISTANCE), 2) as AVG_DISTANCE
-            FROM Flights f
-            JOIN Airlines a ON f.AIRLINE = a.IATA_CODE
-            WHERE f.DISTANCE > (
-                SELECT AVG(DISTANCE) 
-                FROM Flights
-            )
-            GROUP BY f.AIRLINE, f.MONTH
-            HAVING AVG_DELAY > 0
-            ORDER BY AVG_DELAY DESC; 
+            f.AIRLINE,
+            a.AIRLINE as AIRLINE_NAME,
+            ROUND(AVG(f.ARRIVAL_DELAY), 2) as AVG_DELAY
+        FROM flights f
+        JOIN airlines a ON f.AIRLINE = a.IATA_CODE
+        GROUP BY f.AIRLINE
+        HAVING AVG_DELAY > (
+            SELECT AVG(ARRIVAL_DELAY) 
+            FROM flights
+        )
+        ORDER BY AVG_DELAY DESC;
         """
 
         start_time = time.time()
@@ -96,63 +92,41 @@ def test_mongodb_query():
         print("Creating indexes for date fields...")
 
         pipeline = [
-        {
-            "$lookup": {
-                "from": "Airlines",
-                "localField": "AIRLINE",
-                "foreignField": "IATA_CODE",
-                "as": "airline_info"
-            }
-        },
-        {
-            "$unwind": "$airline_info"
-        },
-        {
-            "$facet": {
-                "avgDistanceStats": [
-                    {
-                        "$group": {
-                            "_id": None,
-                            "avgDistance": { "$avg": "$DISTANCE" }
-                        }
-                    }
-                ],
-                "flightStats": [
-                    {
-                        "$group": {
-                            "_id": {
-                                "airline": "$AIRLINE",
-                                "month": "$MONTH"
-                            },
-                            "airlineName": { "$first": "$airline_info.AIRLINE" },
-                            "avgDelay": { "$avg": "$ARRIVAL_DELAY" },
-                            "flightCount": { "$sum": 1 },
-                            "avgDistance": { "$avg": "$DISTANCE" }
-                        }
-                    }
-                ]
-            }
-        },
-        {
-            "$unwind": "$avgDistanceStats"
-        },
-        {
-            "$project": {
-                "results": {
-                    "$filter": {
-                        "input": "$flightStats",
-                        "as": "flight",
-                        "cond": {
-                            "$and": [
-                                { "$gt": ["$$flight.avgDistance", "$avgDistanceStats.avgDistance"] },
-                                { "$gt": ["$$flight.avgDelay", 0] }
-                            ]
-                        }
-                    }
+            {
+                "$group": {
+                    "_id": null,
+                    "totalAvgDelay": { "$avg": "$ARRIVAL_DELAY" }
                 }
+            },
+            {
+                "$lookup": {
+                    "from": "airlines",
+                    "localField": "AIRLINE",
+                    "foreignField": "IATA_CODE",
+                    "as": "airline_info"
+                }
+            },
+            {
+                "$unwind": "$airline_info"
+            },
+            {
+                "$group": {
+                    "_id": {
+                        "airline": "$AIRLINE",
+                        "airlineName": "$airline_info.AIRLINE"
+                    },
+                    "avgDelay": { "$avg": "$ARRIVAL_DELAY" }
+                }
+            },
+            {
+                "$match": {
+                    "avgDelay": { "$gt": "$totalAvgDelay" }
+                }
+            },
+            {
+                "$sort": { "avgDelay": -1 }
             }
-        }
-    ]
+        ]
 
         start_time = time.time()
         print("\nMongoDB: Executing query...")
