@@ -94,13 +94,12 @@ def test_mongodb_query():
         pipeline = [
             {
                 "$group": {
-                    "_id": null,
                     "totalAvgDelay": { "$avg": "$ARRIVAL_DELAY" }
                 }
             },
             {
                 "$lookup": {
-                    "from": "airlines",
+                    "from": "Airlines",
                     "localField": "AIRLINE",
                     "foreignField": "IATA_CODE",
                     "as": "airline_info"
