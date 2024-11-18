@@ -37,11 +37,11 @@ def test_mariadb_query():
                 ROUND(AVG(f.ARRIVAL_DELAY), 2) as AVG_DELAY,
                 COUNT(*) as FLIGHT_COUNT,
                 ROUND(AVG(f.DISTANCE), 2) as AVG_DISTANCE
-            FROM flights f
-            JOIN airlines a ON f.AIRLINE = a.IATA_CODE
+            FROM Flights f
+            JOIN Airlines a ON f.AIRLINE = a.IATA_CODE
             WHERE f.DISTANCE > (
                 SELECT AVG(DISTANCE) 
-                FROM flights
+                FROM Flights
             )
             GROUP BY f.AIRLINE, f.MONTH
             HAVING AVG_DELAY > 0
@@ -98,7 +98,7 @@ def test_mongodb_query():
             [
                 {
                     "$lookup": {
-                        "from": "airlines",
+                        "from": "Airlines",
                         "localField": "AIRLINE",
                         "foreignField": "IATA_CODE",
                         "as": "airline_info"
@@ -115,7 +115,7 @@ def test_mongodb_query():
                 },
                 {
                     "$lookup": {
-                        "from": "flights",
+                        "from": "Flights",
                         "pipeline": [
                             {
                                 "$match": {
@@ -146,7 +146,7 @@ def test_mongodb_query():
         ]
 
         start_time = time.time()
-        print("\nMongoDB: Executing max delays query...")
+        print("\nMongoDB: Executing query...")
         
         try:
             cursor = collection.aggregate(
@@ -165,19 +165,8 @@ def test_mongodb_query():
             
             print(f"\nQuery statistics:")
             print(f"- Total time: {query_time:.2f} seconds")
-            print(f"- Days processed: {len(results)}")
-            
-            # Wyświetl pierwsze 5 wyników
-            print("\nSample results (first 5 days):")
-            for idx, doc in enumerate(results[:5], 1):
-                print(f"\nDay {idx}:")
-                print(f"Date: {doc['date']}")
-                print(f"Max Delay: {doc['maxDelay']} minutes")
-                print(f"Airline: {doc['airline']}")
-                print(f"Flight: {doc['flightNumber']}")
-                print(f"Route: {doc['originAirport']} -> {doc['destinationAirport']}")
-                print(f"Scheduled: {doc['scheduledDeparture']} -> {doc['scheduledArrival']}")
-                print(f"Actual: {doc['actualDeparture']} -> {doc['actualArrival']}")
+            print(f"- Records: {len(results)}")
+
             
             client.close()
             return query_time, results
