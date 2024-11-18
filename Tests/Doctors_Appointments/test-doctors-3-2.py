@@ -3,6 +3,15 @@ import psutil
 import mysql.connector
 from pymongo import MongoClient
 import csv
+import logging
+
+logging.basicConfig(
+    level=logging.INFO, 
+    format='%(asctime)s - %(levelname)s: %(message)s',
+    handlers=[
+        logging.StreamHandler(),  
+    ]
+)
 
 def collect_system_stats():
     """Funkcja zbierająca statystyki systemowe, w tym użycie dysku"""
@@ -77,10 +86,23 @@ def test_mariadb_query():
 def test_mongodb_query():
     """Funkcja do testowania zapytań w MongoDB"""
     try:
-        client = MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=5000)
+        logging.info("Rozpoczynam połączenie z MongoDB")
+        client = MongoClient('mongodb://localhost:27017/', 
+            serverSelectionTimeoutMS=10000,
+            connectTimeoutMS=10000,
+            socketTimeoutMS=10000
+        )
+        
+        logging.info("Sprawdzam dostępność bazy danych")
+        client.admin.command('ismaster')
+        
+        logging.info("Wybieranie bazy danych")
         db = client['Doctors_Appointments']
+        
+        logging.info("Wybieranie kolekcji")
         doctors_collection = db['Appointments']
         
+        logging.info("Przygotowywanie pipeline agregacji")
         pipeline = [
             {'$match': {'diagnosis': 'Cold'}},
             {'$lookup': {
@@ -90,7 +112,7 @@ def test_mongodb_query():
                 'as': 'doctor'
             }},
             {'$unwind': '$doctor'},
-             {'$group': {
+            {'$group': {
                 '_id': {
                     'first_name': '$doctor.first_name',
                     'last_name': '$doctor.last_name'
@@ -103,28 +125,24 @@ def test_mongodb_query():
             }}
         ]
 
+        logging.info("Wykonywanie zapytania agregacji")
         start_time = time.time()
-        print("MongoDB: Executing query...")
-
         cursor = doctors_collection.aggregate(pipeline)
+        
+        logging.info("Przetwarzanie wyników")
         all_results = list(cursor)
-
-        if not all_results:
-            print("No results found. Check data consistency.")
 
         end_time = time.time()
         query_time = end_time - start_time
-        print(f"Query executed in {query_time} seconds. Total results: {len(all_results)}")
-        print("Results:", all_results)
+        
+        logging.info(f"Zapytanie wykonane. Czas: {query_time} sekund. Wyniki: {len(all_results)}")
         
         client.close()
-
         return query_time
 
     except Exception as e:
-        print(f"Error: {e}")
+        logging.error(f"Błąd MongoDB: {e}", exc_info=True)
         return None
-
     
 def save_to_csv(data, filename="system_stats.csv"):
     """Funkcja zapisująca wyniki do pliku CSV"""
