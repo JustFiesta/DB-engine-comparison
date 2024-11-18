@@ -79,13 +79,14 @@ def test_mariadb_query():
 def test_mongodb_query():
     """Funkcja do testowania zapytań w MongoDB"""
     try:
-        client = MongoClient(
+         client = MongoClient(
             'mongodb://localhost:27017/',
-            serverSelectionTimeoutMS=120000,
-            connectTimeoutMS=120000,
-            socketTimeoutMS=120000,
-            maxPoolSize=10,
-            waitQueueTimeoutMS=120000
+            serverSelectionTimeoutMS=300000,  
+            connectTimeoutMS=300000,
+            socketTimeoutMS=300000,
+            maxPoolSize=50,                   
+            waitQueueTimeoutMS=300000,
+            retryReads=True
         )
         
         print("MongoDB: Connected to database")
