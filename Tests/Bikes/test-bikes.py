@@ -35,28 +35,28 @@ def test_mariadb_query(query):
         print(f"MariaDB: Executing query: {query}")
         cursor.execute(query)
 
+        total_rows = 0
         result = cursor.fetchmany(100)
         while result:
+            total_rows += len(result)
             result = cursor.fetchmany(100)
 
         end_time = time.time()
         query_time = end_time - start_time
-        all_results = [doc for doc in cursor]
-
-        print(f"Query executed in {query_time} seconds. Total fetched: {len(all_results)}")
+        print(f"Query executed in {query_time} seconds. Total rows returned: {total_rows}")
 
         cursor.close()
         conn.close()
 
-        return query_time
+        return query_time, total_rows
 
     except mysql.connector.Error as err:
         print(f"MariaDB Error: {err}")
-        return None
+        return None, 0
 
     except Exception as e:
         print(f"General error: {e}")
-        return None
+        return None, 0
 
 
 def test_mongodb_query(collection_name, query=None, pipeline=None, projection=None):
