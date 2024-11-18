@@ -80,42 +80,28 @@ def test_mongodb_query():
         doctors_collection = db['Appointments']
         
         pipeline = [
-             {'$group': {
-                        '_id': '$doctor_id',
-                        'patient_count': {'$sum': 1}
-                    }},
-                    {'$sort': {'patient_count': -1}},
-                    {'$lookup': {
-                        'from': 'appointments',
-                        'let': {'doctor_id': '$_id'},
-                        'pipeline': [
-                            {'$match': {
-                                '$expr': {'$eq': ['$doctor_id', '$$doctor_id']}
-                            }},
-                            {'$lookup': {
-                                'from': 'Patients',
-                                'localField': 'patient_id',
-                                'foreignField': 'patient_id',
-                                'as': 'patient'
-                            }},
-                            {'$unwind': '$patient'},
-                            {'$group': {
-                                '_id': {
-                                    'patient_id': '$patient_id',
-                                    'first_name': '$patient.first_name',
-                                    'last_name': '$patient.last_name'
-                                }
-                            }},
-                            {'$project': {
-                                'first_name': '$_id.first_name',
-                                'last_name': '$_id.last_name',
-                                '_id': 0
-                            }}
-                        ],
-                        'as': 'Patients'
-                    }},
-                    {'$unwind': '$Patients'},
-                    {'$replaceRoot': {'newRoot': '$Patients'}}
+            {'$lookup': {
+                'from': 'Doctors',
+                'localField': 'doctor_id',
+                'foreignField': 'doctor_id',
+                'as': 'doctor'
+            }},
+            {'$lookup': {
+                'from': '{atients',
+                'localField': 'patient_id',
+                'foreignField': 'patient_id',
+                'as': 'patient'
+            }},
+            {'$unwind': '$doctor'},
+            {'$unwind': '$patient'},
+            {'$project': {
+                'appointment_date': 1,
+                'doctor_first_name': '$doctor.first_name',
+                'doctor_last_name': '$doctor.last_name',
+                'patient_first_name': '$patient.first_name',
+                'patient_last_name': '$patient.last_name',
+                'diagnosis': 1
+            }}
         ]
 
         start_time = time.time()
