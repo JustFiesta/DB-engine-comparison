@@ -95,55 +95,63 @@ def test_mongodb_query():
         print("Creating indexes for date fields...")
 
         pipeline = [
-            [
-                {
-                    "$lookup": {
-                        "from": "Airlines",
-                        "localField": "AIRLINE",
-                        "foreignField": "IATA_CODE",
-                        "as": "airline_info"
+        {
+            "$lookup": {
+                "from": "Airlines",
+                "localField": "AIRLINE",
+                "foreignField": "IATA_CODE",
+                "as": "airline_info"
+            }
+        },
+        {
+            "$unwind": "$airline_info"
+        },
+        {
+            "$facet": {
+                "avgDistanceStats": [
+                    {
+                        "$group": {
+                            "_id": None,
+                            "avgDistance": { "$avg": "$DISTANCE" }
+                        }
                     }
-                },
-                {
-                    "$unwind": "$airline_info"
-                },
-                {
-                    "$group": {
-                        "_id": null,
-                        "avgDistance": { "$avg": "$DISTANCE" }
+                ],
+                "flightStats": [
+                    {
+                        "$group": {
+                            "_id": {
+                                "airline": "$AIRLINE",
+                                "month": "$MONTH"
+                            },
+                            "airlineName": { "$first": "$airline_info.AIRLINE" },
+                            "avgDelay": { "$avg": "$ARRIVAL_DELAY" },
+                            "flightCount": { "$sum": 1 },
+                            "avgDistance": { "$avg": "$DISTANCE" }
+                        }
                     }
-                },
-                {
-                    "$lookup": {
-                        "from": "Flights",
-                        "pipeline": [
-                            {
-                                "$match": {
-                                    "DISTANCE": { "$gt": "$avgDistance" }
-                                }
-                            },
-                            {
-                                "$group": {
-                                    "_id": {
-                                        "airline": "$AIRLINE",
-                                        "month": "$MONTH"
-                                    },
-                                    "avgDelay": { "$avg": "$ARRIVAL_DELAY" },
-                                    "flightCount": { "$sum": 1 },
-                                    "avgDistance": { "$avg": "$DISTANCE" }
-                                }
-                            },
-                            {
-                                "$match": {
-                                    "avgDelay": { "$gt": 0 }
-                                }
-                            }
-                        ],
-                        "as": "results"
+                ]
+            }
+        },
+        {
+            "$unwind": "$avgDistanceStats"
+        },
+        {
+            "$project": {
+                "results": {
+                    "$filter": {
+                        "input": "$flightStats",
+                        "as": "flight",
+                        "cond": {
+                            "$and": [
+                                { "$gt": ["$$flight.avgDistance", "$avgDistanceStats.avgDistance"] },
+                                { "$gt": ["$$flight.avgDelay", 0] }
+                            ]
+                        }
                     }
                 }
-            ]
-        ]
+            }
+        }
+    ]
 
         start_time = time.time()
         print("\nMongoDB: Executing query...")
