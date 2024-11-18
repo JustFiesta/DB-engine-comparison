@@ -95,7 +95,7 @@ def test_mongodb_query():
                     "totalAvgDelay": [
                         {
                             "$group": {
-                                "_id": null,
+                                "_id": 1,
                                 "avg": { "$avg": "$ARRIVAL_DELAY" }
                             }
                         }
