@@ -41,7 +41,9 @@ def test_mariadb_query(query):
 
         end_time = time.time()
         query_time = end_time - start_time
-        print(f"Query executed in {query_time} seconds.")
+        all_results = [doc for doc in cursor]
+
+        print(f"Query executed in {query_time} seconds. Total fetched: {len(all_results)}")
 
         cursor.close()
         conn.close()
@@ -366,7 +368,7 @@ def test_database_performance():
                 'collection': 'TripUsers',
                 'query': None,
                 'pipeline': [
-                   {
+                    {
                         '$facet': {
                             'avgDuration': [
                                 {
@@ -375,6 +377,11 @@ def test_database_performance():
                                         'avg_tripduration': {'$avg': '$tripduration'}
                                     }
                                 }
+                            ],
+                            'allTrips': [
+                                {
+                                    '$match': {}  
+                                }
                             ]
                         }
                     },
@@ -382,9 +389,17 @@ def test_database_performance():
                         '$unwind': '$avgDuration'
                     },
                     {
+                        '$unwind': '$allTrips'
+                    },
+                    {
                         '$match': {
-                            'tripduration': {'$gt': '$avgDuration.avg_tripduration'}
+                            '$expr': {
+                                '$gt': ['$allTrips.tripduration', '$avgDuration.avg_tripduration']
+                            }
                         }
+                    },
+                    {
+                        '$replaceRoot': { 'newRoot': '$allTrips' }
                     },
                     {
                         '$project': {
@@ -398,7 +413,7 @@ def test_database_performance():
                 'projection': None
             },
             {
-                'collection': 'TripUsers',
+                'collection': 'Stations',  
                 'query': None,
                 'pipeline': [
                     {
@@ -408,19 +423,21 @@ def test_database_performance():
                                 {
                                     '$group': {
                                         '_id': None,
-                                        'end_station_ids': {'$addToSet': '$end_station_id'}
+                                        'unique_end_stations': {'$addToSet': '$end_station_id'}
                                     }
                                 }
                             ],
-                            'as': 'end_stations'
+                            'as': 'end_stations_info'
                         }
                     },
                     {
-                        '$unwind': '$end_stations'
+                        '$unwind': '$end_stations_info'
                     },
                     {
                         '$match': {
-                            'station_id': {'$in': '$end_stations.end_station_ids'}
+                            '$expr': {
+                                '$in': ['$station_id', '$end_stations_info.unique_end_stations']
+                            }
                         }
                     },
                     {
@@ -437,7 +454,7 @@ def test_database_performance():
                 'collection': 'TripUsers',
                 'query': None,
                 'pipeline': [
-                     {
+                    {
                         '$facet': {
                             'avgDurationYoung': [
                                 {
@@ -451,6 +468,13 @@ def test_database_performance():
                                         'avg_tripduration': {'$avg': '$tripduration'}
                                     }
                                 }
+                            ],
+                            'allTripsYoung': [
+                                {
+                                    '$match': {
+                                        'birth_year': {'$lt': 1980}
+                                    }
+                                }
                             ]
                         }
                     },
@@ -458,10 +482,17 @@ def test_database_performance():
                         '$unwind': '$avgDurationYoung'
                     },
                     {
+                        '$unwind': '$allTripsYoung'
+                    },
+                    {
                         '$match': {
-                            'birth_year': {'$lt': 1980},
-                            'tripduration': {'$gt': '$avgDurationYoung.avg_tripduration'}
+                            '$expr': {
+                                '$gt': ['$allTripsYoung.tripduration', '$avgDurationYoung.avg_tripduration']
+                            }
                         }
+                    },
+                    {
+                        '$replaceRoot': { 'newRoot': '$allTripsYoung' }
                     },
                     {
                         '$project': {
