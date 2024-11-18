@@ -38,7 +38,6 @@ def test_mariadb_query():
         
         result = cursor.fetchmany(100)  
         while result:
-            #print(f"Fetched {len(result)} rows")
             result = cursor.fetchmany(100)
 
         end_time = time.time()
@@ -105,16 +104,12 @@ def test_database_performance():
     Wykonuje zapytania do baz danych, zbiera statystyki systemowe
     i zapisuje wynik w pliku CSV.
     """
-    # Testowanie MariaDB
     mariadb_query_time = test_mariadb_query()  
 
-    # Testowanie MongoDB
     mongodb_query_time = test_mongodb_query() 
 
-    # Zbieranie statystyk systemowych
     system_stats = collect_system_stats()
     
-    # Dodanie danych do statystyk
     system_stats['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
 
     if mariadb_query_time is not None:
@@ -128,4 +123,5 @@ def test_database_performance():
         save_to_csv(system_stats)
 
 if __name__ == '__main__':
-    test_database_performance()
+    for i in range(3):
+        test_database_performance()

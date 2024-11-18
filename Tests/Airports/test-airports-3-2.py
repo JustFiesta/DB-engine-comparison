@@ -77,13 +77,12 @@ def test_mariadb_query():
 def test_mongodb_query():
     """Funkcja do testowania zapytań w MongoDB z optymalizacjami"""
     try:
-        # Zwiększone timeouty i zoptymalizowane ustawienia połączenia
         client = MongoClient(
             'mongodb://localhost:27017/',
-            serverSelectionTimeoutMS=120000,  # 2 minuty
+            serverSelectionTimeoutMS=120000,  
             connectTimeoutMS=120000,
             socketTimeoutMS=120000,
-            maxPoolSize=10,  # Zwiększony pool połączeń
+            maxPoolSize=10,  
             waitQueueTimeoutMS=120000,
             retryWrites=True,
             w='majority'
@@ -92,7 +91,6 @@ def test_mongodb_query():
         print("MongoDB: Connected to database")
         db = client['Airports']
         
-        # Sprawdzenie indeksów przed wykonaniem zapytania
         print("Checking and creating indexes if needed...")
         db.Flights.create_index([("AIRLINE", 1)])
         db.Flights.create_index([("ORIGIN_AIRPORT", 1)])
@@ -101,7 +99,6 @@ def test_mongodb_query():
         
         collection = db['Flights']
 
-        # Zoptymalizowany pipeline
         pipeline = [
             {
                 "$match": {
@@ -159,19 +156,17 @@ def test_mongodb_query():
         print("\nMongoDB: Executing query...")
         
         try:
-            # Zwiększony maxTimeMS i zmniejszony batch size
             cursor = collection.aggregate(
                 pipeline,
                 allowDiskUse=True,
                 batchSize=500,
-                maxTimeMS=1800000  # 30 minut
+                maxTimeMS=1800000  
             )
             
             results_count = 0
             for _ in cursor:
                 results_count += 1
-                #if results_count % 5000 == 0:  # Zmniejszona częstotliwość raportowania
-                    #print(f"Processed {results_count} documents...")
+
                     
             end_time = time.time()
             query_time = end_time - start_time
@@ -209,15 +204,12 @@ def test_database_performance():
     """Funkcja do testowania wydajności bazy danych"""
     print("Starting database performance test...")
     
-    # Testowanie MariaDB
     print("\nTesting MariaDB...")
     mariadb_query_time = test_mariadb_query() 
 
-    # Testowanie MongoDB
     print("\nTesting MongoDB...")
     mongodb_query_time = test_mongodb_query()  
 
-    # Zbieranie statystyk systemowych
     system_stats = collect_system_stats()
     system_stats['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
 
@@ -232,4 +224,5 @@ def test_database_performance():
         save_to_csv(system_stats)
 
 if __name__ == '__main__':
-    test_database_performance()
+    for i in range(3):
+        test_database_performance()

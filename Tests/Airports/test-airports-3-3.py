@@ -40,7 +40,6 @@ def test_mariadb_query():
         
         result = cursor.fetchmany(100)  
         while result:
-            #print(f"Fetched {len(result)} rows")
             result = cursor.fetchmany(100)
 
         end_time = time.time()
@@ -81,14 +80,14 @@ def test_mongodb_query():
         db.Flights.create_index([("AIRLINE", 1)])
         db.Flights.create_index([("ORIGIN_AIRPORT", 1)])
         db.Flights.create_index([("DESTINATION_AIRPORT", 1)])
-        db.Flights.create_index([("ARRVAL_DELAY", 1)])  # Zmienione z ARRIVAL_DELAY
+        db.Flights.create_index([("ARRIVAL_DELAY", 1)])  
         
         collection = db['Flights']
 
         pipeline = [
             {
                 "$match": {
-                    "ARRIVAL_DELAY": {"$gt": 100}  # Zmienione z ARRIVAL_DELAY
+                    "ARRIVAL_DELAY": {"$gt": 100}  
                 }
             },
             {
@@ -129,12 +128,12 @@ def test_mongodb_query():
                     "airline_name": "$airline_info.AIRLINE",
                     "origin_airport": "$origin_airport.AIRPORT",
                     "destination_airport": "$destination_airport.AIRPORT",
-                    "arrival_delay": "$ARRIVAL_DELAY",  # Zmienione z arrival_delay
+                    "arrival_delay": "$ARRIVAL_DELAY", y
                     "_id": 0
                 }
             },
             {
-                "$sort": {"arrival_delay": -1}  # Zmienione z arrival_delay
+                "$sort": {"arrival_delay": -1} 
             }
         ]
 
@@ -142,7 +141,6 @@ def test_mongodb_query():
         print("\nMongoDB: Executing query...")
         
         try:
-            # Dodane logowanie przykładowych wyników
             cursor = collection.aggregate(
                 pipeline,
                 allowDiskUse=True,
@@ -151,14 +149,9 @@ def test_mongodb_query():
             )
             
             results_count = 0
-            sample_results = []  # Lista na przykładowe wyniki
-            
-            for doc in cursor:
+
+            for _ in cursor:
                 results_count += 1
-                if results_count <= 5:  # Zapisz pierwsze 5 wyników
-                    sample_results.append(doc)
-                if results_count % 5000 == 0:
-                    print(f"Processed {results_count} documents...")
                     
             end_time = time.time()
             query_time = end_time - start_time
@@ -166,16 +159,6 @@ def test_mongodb_query():
             print(f"\nQuery statistics:")
             print(f"- Total time: {query_time:.2f} seconds")
             print(f"- Documents processed: {results_count}")
-            
-            # Wyświetl przykładowe wyniki
-            if sample_results:
-                print("\nSample results (first 5 documents):")
-                for idx, doc in enumerate(sample_results, 1):
-                    print(f"\nDocument {idx}:")
-                    print(f"Airline: {doc.get('airline_name')}")
-                    print(f"Origin: {doc.get('origin_airport')}")
-                    print(f"Destination: {doc.get('destination_airport')}")
-                    print(f"Delay: {doc.get('airline_delay')}")
             
             client.close()
             return query_time
@@ -208,19 +191,14 @@ def test_database_performance():
     Wykonuje zapytania do baz danych, zbiera statystyki systemowe
     i zapisuje wynik w pliku CSV.
     """
-    # Testowanie MariaDB
     mariadb_query_time = test_mariadb_query() 
 
-    # Testowanie MongoDB
     mongodb_query_time = test_mongodb_query()  
 
-    # Zbieranie statystyk systemowych
     system_stats = collect_system_stats()
     
-    # Dodanie danych do statystyk
     system_stats['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
 
-    # Dodanie nazw silników baz danych do wyników
     if mariadb_query_time is not None:
         system_stats['database'] = 'MariaDB'
         system_stats['query_time'] = mariadb_query_time
@@ -232,4 +210,5 @@ def test_database_performance():
         save_to_csv(system_stats)
 
 if __name__ == '__main__':
-    test_database_performance()
+    for i in range(3):
+        test_database_performance()

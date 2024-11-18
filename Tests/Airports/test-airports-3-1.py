@@ -40,7 +40,6 @@ def test_mariadb_query():
         
         result = cursor.fetchmany(100)  
         while result:
-            #print(f"Fetched {len(result)} rows")
             result = cursor.fetchmany(100)
 
         end_time = time.time()
@@ -115,7 +114,7 @@ def test_mongodb_query():
                 pipeline,
                 allowDiskUse=True,
                 batchSize=1000,
-                maxTimeMS=600000  # 10 minut maksymalnego czasu wykonania
+                maxTimeMS=600000  
             )
             
             all_results = []
@@ -133,12 +132,6 @@ def test_mongodb_query():
             print(f"\nQuery statistics:")
             print(f"- Total time: {query_time:.2f} seconds")
             print(f"- Airlines processed: {len(all_results)}")
-            print(f"- Average processing time per airline: {query_time/len(all_results):.4f} seconds")
-            
-            # Wyświetl przykładowe wyniki
-            print("\nSample results (first 5 airlines):")
-            for result in all_results[:5]:
-                print(result)
             
             client.close()
             return query_time
@@ -171,19 +164,14 @@ def test_database_performance():
     Wykonuje zapytania do baz danych, zbiera statystyki systemowe
     i zapisuje wynik w pliku CSV.
     """
-    # Testowanie MariaDB
     mariadb_query_time = test_mariadb_query() 
 
-    # Testowanie MongoDB
     mongodb_query_time = test_mongodb_query()  
 
-    # Zbieranie statystyk systemowych
     system_stats = collect_system_stats()
     
-    # Dodanie danych do statystyk
     system_stats['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
 
-    # Dodanie nazw silników baz danych do wyników
     if mariadb_query_time is not None:
         system_stats['database'] = 'MariaDB'
         system_stats['query_time'] = mariadb_query_time
@@ -195,4 +183,5 @@ def test_database_performance():
         save_to_csv(system_stats)
 
 if __name__ == '__main__':
-    test_database_performance()
+    for i in range(3):
+        test_database_performance()
