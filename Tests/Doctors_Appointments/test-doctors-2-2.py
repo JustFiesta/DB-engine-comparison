@@ -30,7 +30,7 @@ def test_mariadb_query():
             database='Doctors_Appointments'
         )
         cursor = conn.cursor()
-        query = "SELECT patient_id, COUNT(DISTINCT doctor_id) AS doctor_count FROM appointments GROUP BY patient_id HAVING doctor_count > 1;"  
+        query = "SELECT patient_id, COUNT(DISTINCT doctor_id) AS doctor_count FROM Appointments GROUP BY patient_id HAVING doctor_count > 1;"  
         start_time = time.time()
 
         print("MariaDB: Executing query...")
@@ -68,18 +68,30 @@ def test_mongodb_query():
         collection = db['appointments']
         
         pipeline = [
-            {'$group': {
-                '_id': '$patient_id',
-                'doctor_count': {'$addToSet': '$doctor_id'}, 
-            }},
-            {'$match': {
-                'doctor_count': {'$gt': 1}
-            }},
-            {'$project': {
-                '_id': 0,
-                'patient_id': '$_id',
-                'doctor_count': {'$size': '$doctor_count'}
-            }}
+            {
+                '$group': {
+                    '_id': '$patient_id',
+                    'unique_doctors': {'$addToSet': '$doctor_id'}
+                }
+            },
+            {
+                '$project': {
+                    'patient_id': '$_id',
+                    'doctor_count': {'$size': '$unique_doctors'}
+                }
+            },
+            {
+                '$match': {
+                    'doctor_count': {'$gt': 1}
+                }
+            },
+            {
+                '$project': {
+                    '_id': 0,
+                    'patient_id': 1,
+                    'doctor_count': 1
+                }
+            }
         ]
 
         start_time = time.time()
@@ -90,15 +102,24 @@ def test_mongodb_query():
 
         end_time = time.time()
         query_time = end_time - start_time
-        print(f"Query executed in {query_time} seconds. Total results: {len(all_results)}")
+        total_results = len(all_results)
+        print(f"MongoDB query executed in {query_time} seconds. Total results: {total_results}")
         
         client.close()
 
-        return query_time
+        return query_time, total_results
 
     except Exception as e:
-        print(f"Error: {e}")
-        return None
+        print(f"MongoDB Error: {e}")
+        return None, 0
+    
+def save_to_csv(data, filename="system_stats.csv"):
+    """Funkcja zapisująca wyniki do pliku CSV"""
+    with open(filename, mode='a', newline='') as file:
+        writer = csv.DictWriter(file, fieldnames=data.keys())
+        if file.tell() == 0:
+            writer.writeheader()
+        writer.writerow(data)
     
 def save_to_csv(data, filename="system_stats.csv"):
     """Funkcja zapisująca wyniki do pliku CSV"""
