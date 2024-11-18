@@ -30,16 +30,14 @@ def test_mariadb_query():
             database='Airports'
         )
         cursor = conn.cursor()
-        query = "SELECT * FROM Flights WHERE ARRIVAL_DELAY > 60;"  # Przykład zapytania
+        query = "SELECT * FROM Flights WHERE ARRIVAL_DELAY > 60;"  
         start_time = time.time()
 
         print("MariaDB: Executing query...")
         cursor.execute(query)
         
-        # Zamiast fetchall(), użyj fetchmany()
-        result = cursor.fetchmany(100)  # Pobiera 100 wierszy na raz
+        result = cursor.fetchmany(100)  
         while result:
-            #print(f"Fetched {len(result)} rows")
             result = cursor.fetchmany(100)
 
         end_time = time.time()
@@ -65,21 +63,16 @@ def test_mongodb_query():
         client = MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=5000)
         db = client['Airports']
         collection = db['Flights']
-        query = {"ARRIVAL_DELAY": {"$gt": 60}}  # Możesz dostosować zapytanie do swoich potrzeb
+        query = {"ARRIVAL_DELAY": {"$gt": 60}}  
         start_time = time.time()
 
         print("MongoDB: Executing query...")
 
-        # Wczytywanie wszystkich wyników, iterując przez kursor
-        cursor = collection.find(query)  # Pobiera wszystkie wyniki bez limitu
+        cursor = collection.find(query)  
         all_results = []
 
-        # Możesz kontrolować ilość wyników w jednym cyklu
         for doc in cursor:
-            all_results.append(doc)  # Możesz też przetwarzać każdy dokument w tym miejscu
-            #if len(all_results) % 100 == 0:  # Przykładowo co 100 wyników
-            #    print(f"Fetched {len(all_results)} rows")
-
+            all_results.append(doc) 
         end_time = time.time()
         query_time = end_time - start_time
         print(f"Query executed in {query_time} seconds. Total fetched: {len(all_results)}")
@@ -96,7 +89,6 @@ def save_to_csv(data, filename="system_stats.csv"):
     """Funkcja zapisująca wyniki do pliku CSV"""
     with open(filename, mode='a', newline='') as file:
         writer = csv.DictWriter(file, fieldnames=data.keys())
-        # Jeśli plik jest pusty, dodaj nagłówki
         if file.tell() == 0:
             writer.writeheader()
         writer.writerow(data)
@@ -107,19 +99,14 @@ def test_database_performance():
     Wykonuje zapytania do baz danych, zbiera statystyki systemowe
     i zapisuje wynik w pliku CSV.
     """
-    # Testowanie MariaDB
-    mariadb_query_time = test_mariadb_query()  # Testujemy MariaDB
+    mariadb_query_time = test_mariadb_query()  
 
-    # Testowanie MongoDB
-    mongodb_query_time = test_mongodb_query()  # Testujemy MongoDB
+    mongodb_query_time = test_mongodb_query()  
 
-    # Zbieranie statystyk systemowych
     system_stats = collect_system_stats()
     
-    # Dodanie danych do statystyk
     system_stats['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
 
-    # Dodanie nazw silników baz danych do wyników
     if mariadb_query_time is not None:
         system_stats['database'] = 'MariaDB'
         system_stats['query_time'] = mariadb_query_time
@@ -131,5 +118,5 @@ def test_database_performance():
         save_to_csv(system_stats)
 
 if __name__ == '__main__':
-    # Jednorazowe testowanie wydajności
+
     test_database_performance()
