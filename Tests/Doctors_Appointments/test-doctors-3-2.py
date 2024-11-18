@@ -78,39 +78,51 @@ def test_mongodb_query():
         client = MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=5000)
         db = client['Doctors_Appointments']
         doctors_collection = db['Doctors']
-        appointments_collection = db['Appointments']
         
         pipeline = [
             {
-                '$lookup': {
+            'collection': 'Appointments',
+            'pipeline': [
+                {'$group': {
+                    '_id': '$doctor_id',
+                    'patient_count': {'$sum': 1}
+                }},
+                {'$sort': {'patient_count': -1}},
+                {'$limit': 1},
+                {'$lookup': {
                     'from': 'Appointments',
-                    'localField': 'patient_id',
-                    'foreignField': 'patient_id',
-                    'as': 'appointments'
-                }
-            },
-            {
-                '$lookup': {
-                    'from': 'Doctors',
-                    'localField': 'appointments.doctor_id',
-                    'foreignField': 'doctor_id',
-                    'as': 'doctors'
-                }
-            },
-            {
-                '$project': {
-                    'patient_name': {
-                        '$concat': ['$first_name', ' ', '$last_name']
-                    },
-                    'total_appointments': {'$size': '$appointments'},
-                    'visited_specializations': {'$setUnion': '$doctors.specialization'}
-                }
-            },
-            {
-                '$match': {
-                    'total_appointments': {'$gt': 1}
-                }
-            }
+                    'let': {'doctor_id': '$_id'},
+                    'pipeline': [
+                        {'$match': {
+                            '$expr': {'$eq': ['$doctor_id', '$$doctor_id']}
+                        }},
+                        {'$lookup': {
+                            'from': 'patients',
+                            'localField': 'patient_id',
+                            'foreignField': 'patient_id',
+                            'as': 'patient'
+                        }},
+                        {'$unwind': '$patient'},
+                        {'$group': {
+                            '_id': {
+                                'patient_id': '$patient_id',
+                                'first_name': '$patient.first_name',
+                                'last_name': '$patient.last_name'
+                            }
+                        }},
+                        {'$project': {
+                            'first_name': '$_id.first_name',
+                            'last_name': '$_id.last_name',
+                            '_id': 0
+                        }},
+                        {'$limit': 10}
+                    ],
+                    'as': 'patients'
+                }},
+                {'$unwind': '$patients'},
+                {'$replaceRoot': {'newRoot': '$patients'}}
+            ]
+        }
         ]
 
         start_time = time.time()
@@ -145,22 +157,18 @@ def test_database_performance():
     Wykonuje zapytania do baz danych, zbiera statystyki systemowe
     i zapisuje wynik w pliku CSV.
     """
-    # Testowanie MariaDB
-    mariadb_query_time = test_mariadb_query()  
+    #mariadb_query_time = test_mariadb_query()  
 
-    # Testowanie MongoDB
     mongodb_query_time = test_mongodb_query() 
 
-    # Zbieranie statystyk systemowych
     system_stats = collect_system_stats()
     
-    # Dodanie danych do statystyk
     system_stats['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
 
-    if mariadb_query_time is not None:
-        system_stats['database'] = 'MariaDB'
-        system_stats['query_time'] = mariadb_query_time
-        save_to_csv(system_stats)
+    # if mariadb_query_time is not None:
+    #     system_stats['database'] = 'MariaDB'
+    #     system_stats['query_time'] = mariadb_query_time
+    #     save_to_csv(system_stats)
 
     if mongodb_query_time is not None:
         system_stats['database'] = 'MongoDB'
