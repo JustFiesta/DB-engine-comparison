@@ -145,12 +145,12 @@ def test_database_performance():
             {
                 'collection': 'TripUsers',
                 'query': {"tripduration": { "$gt": 1800 } },
-                'projection': {"tripduration": 1, "_id": 0}  
+                'projection': None 
             },
             {
                 'collection': 'TripUsers',
                 'query': {"end_station_name": "Newport Pkwy" },
-                'projection': {"end_station_name": 1, "_id": 0}
+                'projection': None
             },
             { 
                 'collection': 'TripUsers',
@@ -162,7 +162,8 @@ def test_database_performance():
                     {
                         "$project": {"usertype": "$_id", "_id": 0}
                     }  
-                ] 
+                ],
+                'projection': None
             },
             # grupowanie
             {
@@ -185,7 +186,8 @@ def test_database_performance():
                     {
                         "$sort": {"usertype": 1} 
                     }
-                ]
+                ],
+                'projection': None
             },
             {
                 'collection': 'TripUsers',
@@ -212,7 +214,8 @@ def test_database_performance():
                             "birth_year": {"$ne": None}
                         }
                     }
-                ]
+                ],
+                'projection': None
             },
             {
                 'collection': 'TripUsers',
@@ -241,7 +244,8 @@ def test_database_performance():
                             "gender": {"$ne": None}
                         }
                     }
-                ]
+                ],
+                'projection': None
             },
             # joiny
             {
@@ -287,7 +291,8 @@ def test_database_performance():
                     {
                         "$sort": {"trip_id": 1}
                     },
-                ]
+                ],
+                'projection': None
             },
             {
                 'collection': 'TripUsers',
@@ -322,7 +327,8 @@ def test_database_performance():
                             'end_station_name': {'$arrayElemAt': ['$end_station.station_name', 0]}
                         }
                     }
-                ]
+                ],
+                'projection': None
             },
             {
                 'collection': 'TripUsers',
@@ -354,7 +360,8 @@ def test_database_performance():
                         }
                     }
                     
-                ]
+                ],
+                'projection': None
             },
             # podzapytania
             {
@@ -389,7 +396,8 @@ def test_database_performance():
                             'starttime': 1
                         }
                     }
-                ]
+                ],
+                'projection': None
             },
             {
                 'collection': 'TripUsers',
@@ -424,7 +432,8 @@ def test_database_performance():
                             'station_name': 1
                         }
                     }
-                ]
+                ],
+                'projection': None
             },
             {
                 'collection': 'TripUsers',
@@ -464,7 +473,8 @@ def test_database_performance():
                             'birth_year': 1
                         }
                     }
-                ]
+                ],
+                'projection': None
             },
         ]
     }

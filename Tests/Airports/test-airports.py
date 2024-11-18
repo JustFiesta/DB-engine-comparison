@@ -189,12 +189,12 @@ def test_database_performance():
             {
                 'collection': 'Airlines',
                 'query': {"IATA_CODE": "AA"},
-                'projection': {"AIRLINE": 1, "_id": 0}
+                'projection': None
             },
             { 
                 'collection': 'Airports',
                 'query': { "STATE": "CA" },
-                'projection': { "AIRPORT": 1, "CITY": 1, "_id": 0 }  
+                'projection': None  
             },
             # grupowanie
             {
@@ -225,7 +225,8 @@ def test_database_performance():
                             "cancel_count": { "$sum": 1 }  
                         }
                     }
-                ]
+                ],
+                'projection': None
             },
             {
                 'collection': 'Flights',
@@ -246,7 +247,8 @@ def test_database_performance():
                             "flight_count": { "$sum": 1 } 
                         }
                     }
-                ]
+                ],
+                'projection': None
             },
             # joiny
             {
@@ -280,7 +282,8 @@ def test_database_performance():
                             "_id": 0
                         }
                     }
-                ]
+                ],
+                'projection': None
             },
             {
                 'collection': 'Flights',
@@ -336,7 +339,8 @@ def test_database_performance():
                     {
                         "$sort": {"arrival_delay": -1}
                     }
-                ]
+                ],
+                'projection': None
             },
             {
                 'collection': 'Flights',
@@ -392,7 +396,8 @@ def test_database_performance():
                     {
                         "$sort": {"arrival_delay": -1}
                     }
-                ]
+                ],
+                'projection': None
             },
             # podzapytania
             {
@@ -469,7 +474,8 @@ def test_database_performance():
                     {
                         "$sort": { "avgDelay": -1 }
                     }
-                ]
+                ],
+                'projection': None
             },
             {
                 'collection': 'Flights',
@@ -521,7 +527,8 @@ def test_database_performance():
                             "_id.city": 1
                         }
                     }        
-                ]
+                ],
+                'projection': None
             },
         ]
     }
