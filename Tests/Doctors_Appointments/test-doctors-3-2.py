@@ -77,7 +77,7 @@ def test_mongodb_query():
     try:
         client = MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=5000)
         db = client['Doctors_Appointments']
-        doctors_collection = db['Doctors']
+        doctors_collection = db['Appointments']
         
         pipeline = [
              {'$group': {
