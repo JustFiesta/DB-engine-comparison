@@ -31,10 +31,20 @@ def test_mariadb_query():
         )
         cursor = conn.cursor()
         query = """SELECT 
-        d.specialization, COUNT(a.appointment_id) AS appointment_count
-        FROM Doctors d
-        LEFT JOIN Appointments a ON d.doctor_id = a.doctor_id
-        GROUP BY d.specialization;
+            p.patient_id,
+            CONCAT(p.first_name, ' ', p.last_name) as patient_name,
+            COUNT(a.appointment_id) as total_appointments,
+            GROUP_CONCAT(DISTINCT d.specialization) as visited_specializations
+        FROM 
+            Patients p
+        LEFT JOIN 
+            Appointments a ON p.patient_id = a.patient_id
+        LEFT JOIN 
+            Doctors d ON a.doctor_id = d.doctor_id
+        GROUP BY 
+            p.patient_id
+        HAVING 
+            total_appointments > 1;
         """  
         start_time = time.time()
 
@@ -71,21 +81,36 @@ def test_mongodb_query():
         appointments_collection = db['Appointments']
         
         pipeline = [
-            {'$lookup': {
-                'from': 'Appointments',
-                'localField': 'doctor_id',
-                'foreignField': 'doctor_id',
-                'as': 'appointments'
-            }},
-            {'$group': {
-                '_id': '$specialization',
-                'appointment_count': {'$count': {}}
-            }},
-            {'$project': {
-                '_id': 0,
-                'specialization': '$_id',
-                'appointment_count': 1
-            }}
+            {
+                '$lookup': {
+                    'from': 'Appointments',
+                    'localField': 'patient_id',
+                    'foreignField': 'patient_id',
+                    'as': 'appointments'
+                }
+            },
+            {
+                '$lookup': {
+                    'from': 'Doctors',
+                    'localField': 'appointments.doctor_id',
+                    'foreignField': 'doctor_id',
+                    'as': 'doctors'
+                }
+            },
+            {
+                '$project': {
+                    'patient_name': {
+                        '$concat': ['$first_name', ' ', '$last_name']
+                    },
+                    'total_appointments': {'$size': '$appointments'},
+                    'visited_specializations': {'$setUnion': '$doctors.specialization'}
+                }
+            },
+            {
+                '$match': {
+                    'total_appointments': {'$gt': 1}
+                }
+            }
         ]
 
         start_time = time.time()
