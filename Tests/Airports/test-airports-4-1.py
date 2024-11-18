@@ -34,12 +34,12 @@ def test_mariadb_query():
             f.AIRLINE,
             a.AIRLINE as AIRLINE_NAME,
             ROUND(AVG(f.ARRIVAL_DELAY), 2) as AVG_DELAY
-        FROM flights f
-        JOIN airlines a ON f.AIRLINE = a.IATA_CODE
+        FROM Flights f
+        JOIN Airlines a ON f.AIRLINE = a.IATA_CODE
         GROUP BY f.AIRLINE
         HAVING AVG_DELAY > (
             SELECT AVG(ARRIVAL_DELAY) 
-            FROM flights
+            FROM Flights
         )
         ORDER BY AVG_DELAY DESC;
         """
@@ -94,6 +94,7 @@ def test_mongodb_query():
         pipeline = [
             {
                 "$group": {
+                    "_id": 0,
                     "totalAvgDelay": { "$avg": "$ARRIVAL_DELAY" }
                 }
             },
