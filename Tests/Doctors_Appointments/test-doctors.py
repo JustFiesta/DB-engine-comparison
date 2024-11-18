@@ -319,27 +319,132 @@ def test_database_performance():
                 'projection': None
             },
             {
-                'collection': '',
+                'collection': 'Appointments',
                 'query': None,
                 'pipeline': [
-                    
+                    {
+                        '$lookup': {
+                            'from': 'doctors',
+                            'localField': 'doctor_id',
+                            'foreignField': 'doctor_id',
+                            'as': 'doctor'
+                        }
+                    },
+                    {'  $lookup': {
+                            'from': 'patients',
+                            'localField': 'patient_id',
+                            'foreignField': 'patient_id',
+                            'as': 'patient'
+                        }   
+                    },
+                    {   
+                        '$unwind': '$doctor'
+                    },
+                    {
+                        '$unwind': '$patient'
+                    },
+                    {
+                        '$project': {
+                            'appointment_date': 1,
+                            'doctor_first_name': '$doctor.first_name',
+                            'doctor_last_name': '$doctor.last_name',
+                            'patient_first_name': '$patient.first_name',
+                            'patient_last_name': '$patient.last_name',
+                            'diagnosis': 1
+                        }
+                    },
                 ],
                 'projection': None
             },
             {
-                'collection': '',
+                'collection': 'Appointments',
                 'query': None,
                 'pipeline': [
-                    
+                    {
+                        '$group': {
+                            '_id': '$patient_id',
+                            'total_appointments': {'$sum': 1}
+                        }
+                    },
+                    {   
+                        '$match': {
+                            'total_appointments': {'$gt': 5}
+                        }
+                    },
+                    {
+                        '$lookup': {
+                            'from': 'patients',
+                            'localField': '_id',
+                            'foreignField': 'patient_id',
+                            'as': 'patient_info'
+                        }
+                    },
+                    {
+                        '$unwind': '$patient_info'
+                    },
+                    {
+                        '$project': {
+                            'first_name': '$patient_info.first_name',
+                            'last_name': '$patient_info.last_name',
+                            'total_appointments': 1
+                        }
+                    },
                 ],
                 'projection': None
             },
             # podzapytania
             {
-                'collection': '',
+                'collection': 'Appointments',
                 'query': None,
                 'pipeline': [
-                   
+                    {
+                        '$group': {
+                        '_id': '$patient_id',
+                        'appointment_count': {'$sum': 1}
+                        }
+                    },
+                    {
+                        '$match': {'appointment_count': {'$gt': 1}}},
+                    {
+                        '$lookup': {
+                            'from': 'appointments',
+                            'let': {'patient_id': '$_id'},
+                            'pipeline': [
+                                {
+                                    '$match': {
+                                        '$expr': {'$eq': ['$patient_id', '$$patient_id']}
+                                    }
+                                },
+                                {   
+                                    '$lookup': {
+                                        'from': 'patients',
+                                        'localField': 'patient_id',
+                                        'foreignField': 'patient_id',
+                                        'as': 'patient'
+                                    }
+                                },
+                                {
+                                    '$unwind': '$patient'
+                                },
+                                {
+                                    '$project': {
+                                        'appointment_id': 1,
+                                        'appointment_date': 1,
+                                        'first_name': '$patient.first_name',
+                                        'last_name': '$patient.last_name',
+                                        'diagnosis': 1
+                                    }
+                                }
+                        ],
+                        'as': 'appointments'
+                        }
+                    },
+                    {
+                        '$unwind': '$appointments'
+                    },
+                    {
+                        '$replaceRoot': {'newRoot': '$appointments'}
+                    }
                 ],
                 'projection': None
             },
