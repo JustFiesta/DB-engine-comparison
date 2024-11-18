@@ -4,7 +4,6 @@ import mysql.connector
 from pymongo import MongoClient
 import csv
 
-
 def collect_system_stats():
     """Funkcja zbierająca statystyki systemowe, w tym użycie dysku"""
     process = psutil.Process()
@@ -21,7 +20,6 @@ def collect_system_stats():
     }
     return stats
 
-
 def test_mariadb_query(query):
     """Funkcja do testowania zapytań w MariaDB"""
     try:
@@ -29,7 +27,7 @@ def test_mariadb_query(query):
             host='localhost',
             user='mariadb',
             password='P@ssw0rd',
-            database='Bikes'
+            database='bikes'
         )
         cursor = conn.cursor()
 
@@ -65,7 +63,7 @@ def test_mongodb_query(collection_name, query=None, pipeline=None, projection=No
     """
     try:
         client = MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=5000)
-        db = client['Bikes']
+        db = client['Airports']
         collection = db[collection_name]
 
         start_time = time.time()
@@ -77,7 +75,7 @@ def test_mongodb_query(collection_name, query=None, pipeline=None, projection=No
             print(f"MongoDB: Executing query on collection '{collection_name}': {query}")
             cursor = collection.find(query, projection) if projection else collection.find(query)
         else:
-            raise ValueError("Either 'query' or 'pipeline' must be provided.")
+            raise ValueError("Either 'query' or 'pipeline' must be provided")
 
         all_results = [doc for doc in cursor]
 
@@ -104,7 +102,7 @@ def save_to_csv(data, filename="system_stats.csv"):
 
 def test_database_performance():
     """
-    Funkcja do jednorazowego testowania wydajności bazy danych.
+    Funkcja do testowania wydajności bazy danych.
     Wykonuje zapytania do baz danych, zbiera statystyki systemowe
     i zapisuje wynik w pliku CSV.
     """
@@ -489,14 +487,16 @@ def test_database_performance():
 
     for query_set in queries['MongoDB']:
         mongodb_query_time = test_mongodb_query(
-            query_set['collection'], query_set['query'], query_set['projection']
+            collection_name=query_set['collection'],
+            query=query_set.get('query'),
+            pipeline=query_set.get('pipeline'),
+            projection=query_set.get('projection')
         )
         system_stats = collect_system_stats()
         system_stats['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
         system_stats['database'] = 'MongoDB'
         system_stats['query_time'] = mongodb_query_time
         save_to_csv(system_stats)
-
 
 if __name__ == '__main__':
         test_database_performance()

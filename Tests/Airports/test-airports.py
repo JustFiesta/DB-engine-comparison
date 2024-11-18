@@ -104,7 +104,7 @@ def save_to_csv(data, filename="system_stats.csv"):
 
 def test_database_performance():
     """
-    Funkcja do jednorazowego testowania wydajności bazy danych.
+    Funkcja do testowania wydajności bazy danych.
     Wykonuje zapytania do baz danych, zbiera statystyki systemowe
     i zapisuje wynik w pliku CSV.
     """
