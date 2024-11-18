@@ -88,9 +88,9 @@ def test_mongodb_query():
     try:
         logging.info("Rozpoczynam połączenie z MongoDB")
         client = MongoClient('mongodb://localhost:27017/', 
-            serverSelectionTimeoutMS=10000,
-            connectTimeoutMS=10000,
-            socketTimeoutMS=10000
+            serverSelectionTimeoutMS=300000,
+            connectTimeoutMS=300000,
+            socketTimeoutMS=300000
         )
         
         logging.info("Sprawdzam dostępność bazy danych")
