@@ -1,14 +1,31 @@
-# Importing csv files into MongoDB and MariaDB
+# Importing data into MongoDB and MariaDB
 
-These are steps for correct import of given doctor appointments datasets.
+These are steps for correct import of given datasets.
+
+Every database structure is present in its own subfolder.
 
 ## MariaDB
 
 0. Connect to MariaDB server via `mysql`/`mariadb`
-1. Create database
-2. Create table structure
-3. Load data
-4. Check DB with simple query
+1. Copy structure file into cli
+2. Load data
+
+    ```sql
+    LOAD DATA LOCAL INFILE 'path/to/file.csv' INTO TABLE Table_name FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+    ```
+
+3. Check DBs with simple query
+
+    ```sql
+    USE bikes;
+    SELECT * FROM Stations;
+
+    USE Doctor_Appointments;
+    SELECT * FROM Doctors;
+
+    USE Airports;
+    SELECT * FROM Flights;
+    ```
 
 ## MongoDB
 
