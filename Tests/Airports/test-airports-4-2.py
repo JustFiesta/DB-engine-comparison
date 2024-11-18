@@ -167,7 +167,7 @@ def test_database_performance():
     i zapisuje wynik w pliku CSV.
     """
     # Testowanie MariaDB
-    #mariadb_query_time = test_mariadb_query() 
+    mariadb_query_time = test_mariadb_query() 
 
     # Testowanie MongoDB
     mongodb_query_time = test_mongodb_query()  
@@ -179,10 +179,10 @@ def test_database_performance():
     system_stats['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
 
     # Dodanie nazw silników baz danych do wyników
-    #if mariadb_query_time is not None:
-    #    system_stats['database'] = 'MariaDB'
-    #    system_stats['query_time'] = mariadb_query_time
-    #    save_to_csv(system_stats)
+    if mariadb_query_time is not None:
+        system_stats['database'] = 'MariaDB'
+        system_stats['query_time'] = mariadb_query_time
+        save_to_csv(system_stats)
 
     if mongodb_query_time is not None:
         system_stats['database'] = 'MongoDB'
