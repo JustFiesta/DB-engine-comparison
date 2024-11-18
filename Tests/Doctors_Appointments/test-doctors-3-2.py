@@ -80,27 +80,24 @@ def test_mongodb_query():
         doctors_collection = db['Appointments']
         
         pipeline = [
+             {'$match': {'diagnosis': 'Flu'}},
             {'$lookup': {
-                'from': 'Doctors',
+                'from': 'doctors',
                 'localField': 'doctor_id',
                 'foreignField': 'doctor_id',
                 'as': 'doctor'
             }},
-            {'$lookup': {
-                'from': 'Patients',
-                'localField': 'patient_id',
-                'foreignField': 'patient_id',
-                'as': 'patient'
-            }},
             {'$unwind': '$doctor'},
-            {'$unwind': '$patient'},
+            {'$group': {
+                '_id': {
+                    'first_name': '$doctor.first_name',
+                    'last_name': '$doctor.last_name'
+                }
+            }},
             {'$project': {
-                'appointment_date': 1,
-                'doctor_first_name': '$doctor.first_name',
-                'doctor_last_name': '$doctor.last_name',
-                'patient_first_name': '$patient.first_name',
-                'patient_last_name': '$patient.last_name',
-                'diagnosis': 1
+                'first_name': '$_id.first_name',
+                'last_name': '$_id.last_name',
+                '_id': 0
             }}
         ]
 
