@@ -89,38 +89,60 @@ def test_mongodb_query():
         db = client['Airports']
         collection = db['Flights']
 
-        print("Creating indexes for date fields...")
-
         pipeline = [
             {
-                "$group": {
-                    "_id": 0,
-                    "totalAvgDelay": { "$avg": "$ARRIVAL_DELAY" }
+                "$facet": {
+                    "totalAvgDelay": [
+                        {
+                            "$group": {
+                                "_id": null,
+                                "avg": { "$avg": "$ARRIVAL_DELAY" }
+                            }
+                        }
+                    ],
+                    "airlineDelays": [
+                        {
+                            "$group": {
+                                "_id": "$AIRLINE",
+                                "avgDelay": { "$avg": "$ARRIVAL_DELAY" }
+                            }
+                        },
+                        {
+                            "$lookup": {
+                                "from": "Airlines",
+                                "localField": "_id",
+                                "foreignField": "IATA_CODE",
+                                "as": "airline_info"
+                            }
+                        },
+                        {
+                            "$unwind": "$airline_info"
+                        }
+                    ]
                 }
             },
             {
-                "$lookup": {
-                    "from": "Airlines",
-                    "localField": "AIRLINE",
-                    "foreignField": "IATA_CODE",
-                    "as": "airline_info"
+                "$unwind": "$totalAvgDelay"
+            },
+            {
+                "$project": {
+                    "results": {
+                        "$filter": {
+                            "input": "$airlineDelays",
+                            "as": "airline",
+                            "cond": { "$gt": ["$$airline.avgDelay", "$totalAvgDelay.avg"] }
+                        }
+                    }
                 }
             },
             {
-                "$unwind": "$airline_info"
+                "$unwind": "$results"
             },
             {
-                "$group": {
-                    "_id": {
-                        "airline": "$AIRLINE",
-                        "airlineName": "$airline_info.AIRLINE"
-                    },
-                    "avgDelay": { "$avg": "$ARRIVAL_DELAY" }
-                }
-            },
-            {
-                "$match": {
-                    "avgDelay": { "$gt": "$totalAvgDelay" }
+                "$project": {
+                    "_id": "$results._id",
+                    "airlineName": "$results.airline_info.AIRLINE",
+                    "avgDelay": { "$round": ["$results.avgDelay", 2] }
                 }
             },
             {
@@ -149,7 +171,6 @@ def test_mongodb_query():
             print(f"\nQuery statistics:")
             print(f"- Total time: {query_time:.2f} seconds")
             print(f"- Records: {len(results)}")
-
             
             client.close()
             return query_time, results
