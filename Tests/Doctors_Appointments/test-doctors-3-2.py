@@ -84,7 +84,6 @@ def test_mariadb_query():
 
 
 def test_mongodb_query():
-    """Funkcja do testowania zapytań w MongoDB"""
     try:
         logging.info("Rozpoczynam połączenie z MongoDB")
         client = MongoClient('mongodb://localhost:27017/', 
@@ -102,6 +101,10 @@ def test_mongodb_query():
         logging.info("Wybieranie kolekcji")
         doctors_collection = db['Appointments']
         
+        logging.info("Tworzenie indeksów")
+        doctors_collection.create_index('diagnosis')
+        doctors_collection.create_index('doctor_id')
+        
         logging.info("Przygotowywanie pipeline agregacji")
         pipeline = [
             {'$match': {'diagnosis': 'Cold'}},
@@ -116,18 +119,20 @@ def test_mongodb_query():
                 '_id': {
                     'first_name': '$doctor.first_name',
                     'last_name': '$doctor.last_name'
-                }
+                },
+                'count': {'$sum': 1} 
             }},
             {'$project': {
                 'first_name': '$_id.first_name',
                 'last_name': '$_id.last_name',
+                'count': 1,
                 '_id': 0
             }}
         ]
 
         logging.info("Wykonywanie zapytania agregacji")
         start_time = time.time()
-        cursor = doctors_collection.aggregate(pipeline)
+        cursor = doctors_collection.aggregate(pipeline, maxTimeMS=300000)  
         
         logging.info("Przetwarzanie wyników")
         all_results = list(cursor)
