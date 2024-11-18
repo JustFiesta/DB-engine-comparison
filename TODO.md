@@ -6,12 +6,14 @@ Comparison of the MongoDB and MariaDB engines by performance
 
 1. Setup VM on Cloud with public access and spin two servers - DONE
 
-2. Import data from csvs - INPROGRESS
+2. Relations in databases and datasets - how to import datasets to relational dbs 
 
-3. Setup explanation - DONE
+3. Import data from csvs - INPROGRESS
 
-4. compare usage of resources - ????
+4. Setup explanation - DONE
 
-5. create excel
+5. compare usage of resources - ????
 
-6. create paper
+6. create excel
+
+7. create paper
