@@ -31,20 +31,22 @@ def test_mariadb_query():
         )
         cursor = conn.cursor()
         query = """SELECT 
-            d.specialization,
-            COUNT(DISTINCT d.doctor_id) as doctor_count,
-            COUNT(a.appointment_id) as total_appointments,
-            COUNT(DISTINCT p.patient_id) as unique_patients
+            p.first_name,
+            p.last_name,
+            p.phone_number,
+            COUNT(a.appointment_id) as visits_count,
+            MIN(a.appointment_date) as first_visit,
+            MAX(a.appointment_date) as last_visit
         FROM 
-            Doctors d
+            Patients p
         LEFT JOIN 
-            Appointments a ON d.doctor_id = a.doctor_id
-        LEFT JOIN 
-            Patients p ON a.patient_id = p.patient_id
+            Appointments a ON p.patient_id = a.patient_id
         GROUP BY 
-            d.specialization
+            p.patient_id
+        HAVING 
+            visits_count > 0
         ORDER BY 
-            total_appointments DESC;
+            last_visit DESC;
         """  
         start_time = time.time()
 
@@ -93,32 +95,15 @@ def test_mongodb_query():
                 }
             },
             {
-                '$lookup': {
-                    'from': 'Patients',
-                    'localField': 'appointments.patient_id',
-                    'foreignField': 'patient_id',
-                    'as': 'patients'
-                }
-            },
-            {
-                '$group': {
-                    '_id': '$specialization',
-                    'doctor_count': {'$sum': 1},
-                    'total_appointments': {'$sum': {'$size': '$appointments'}},
-                    'unique_patients': {'$addToSet': '$patients.patient_id'}
-                }
-            },
-            {
                 '$project': {
-                    'specialization': '$_id',
-                    'doctor_count': 1,
-                    'total_appointments': 1,
-                    'unique_patients': {'$size': {'$reduce': {
-                        'input': '$unique_patients',
-                        'initialValue': [],
-                        'in': {'$setUnion': ['$$value', '$$this']}
-                    }}}
+                    'specialization': 1,
+                    'email': 1,
+                    'appointments_count': {'$size': '$appointments'},
+                    'common_diagnoses': {'$setUnion': '$appointments.diagnosis'}
                 }
+            },
+            {
+                '$sort': {'appointments_count': -1}
             }
         ]
 
