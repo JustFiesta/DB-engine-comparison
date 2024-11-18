@@ -31,20 +31,19 @@ def test_mariadb_query():
         )
         cursor = conn.cursor()
         query = """SELECT 
-            p.patient_id,
-            CONCAT(p.first_name, ' ', p.last_name) as patient_name,
-            COUNT(a.appointment_id) as total_appointments,
-            GROUP_CONCAT(DISTINCT d.specialization) as visited_specializations
+            d.first_name, 
+            d.last_name
         FROM 
-            Patients p
-        LEFT JOIN 
-            Appointments a ON p.patient_id = a.patient_id
-        LEFT JOIN 
-            Doctors d ON a.doctor_id = d.doctor_id
+            Appointments a
+        JOIN 
+            Doctors d
+        ON 
+            a.doctor_id = d.doctor_id
+        WHERE 
+            a.diagnosis = 'Flu'
         GROUP BY 
-            p.patient_id
-        HAVING 
-            total_appointments > 1;
+            d.first_name, 
+            d.last_name;
         """  
         start_time = time.time()
 
@@ -138,7 +137,7 @@ def test_database_performance():
     Wykonuje zapytania do baz danych, zbiera statystyki systemowe
     i zapisuje wynik w pliku CSV.
     """
-    #mariadb_query_time = test_mariadb_query()  
+    mariadb_query_time = test_mariadb_query()  
 
     mongodb_query_time = test_mongodb_query() 
 
@@ -146,10 +145,10 @@ def test_database_performance():
     
     system_stats['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
 
-    # if mariadb_query_time is not None:
-    #     system_stats['database'] = 'MariaDB'
-    #     system_stats['query_time'] = mariadb_query_time
-    #     save_to_csv(system_stats)
+    if mariadb_query_time is not None:
+        system_stats['database'] = 'MariaDB'
+        system_stats['query_time'] = mariadb_query_time
+        save_to_csv(system_stats)
 
     if mongodb_query_time is not None:
         system_stats['database'] = 'MongoDB'
