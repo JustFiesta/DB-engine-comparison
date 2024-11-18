@@ -31,11 +31,20 @@ def test_mariadb_query():
         )
         cursor = conn.cursor()
         query = """SELECT 
-        p.first_name, p.last_name, COUNT(a.appointment_id) AS visit_count
-        FROM Patients p
-        JOIN Appointments a ON p.patient_id = a.patient_id
-        GROUP BY p.patient_id
-        HAVING visit_count > 1;
+            d.specialization,
+            COUNT(DISTINCT d.doctor_id) as doctor_count,
+            COUNT(a.appointment_id) as total_appointments,
+            COUNT(DISTINCT p.patient_id) as unique_patients
+        FROM 
+            Doctors d
+        LEFT JOIN 
+            Appointments a ON d.doctor_id = a.doctor_id
+        LEFT JOIN 
+            Patients p ON a.patient_id = p.patient_id
+        GROUP BY 
+            d.specialization
+        ORDER BY 
+            total_appointments DESC;
         """  
         start_time = time.time()
 
@@ -78,34 +87,37 @@ def test_mongodb_query():
             {
                 '$lookup': {
                     'from': 'Appointments',
-                    'localField': 'patient_id',
-                    'foreignField': 'patient_id',
+                    'localField': 'doctor_id',
+                    'foreignField': 'doctor_id',
                     'as': 'appointments'
                 }
             },
             {
-                '$unwind': '$appointments'
-            },
-            {
-                '$group': {
-                    '_id': {
-                        'first_name': '$first_name',
-                        'last_name': '$last_name'
-                    },
-                    'visit_count': {'$count': {}}
+                '$lookup': {
+                    'from': 'Patients',
+                    'localField': 'appointments.patient_id',
+                    'foreignField': 'patient_id',
+                    'as': 'patients'
                 }
             },
             {
-                '$match': {
-                    'visit_count': {'$gt': 1}
+                '$group': {
+                    '_id': '$specialization',
+                    'doctor_count': {'$sum': 1},
+                    'total_appointments': {'$sum': {'$size': '$appointments'}},
+                    'unique_patients': {'$addToSet': '$patients.patient_id'}
                 }
             },
             {
                 '$project': {
-                    '_id': 0,
-                    'first_name': '$_id.first_name',
-                    'last_name': '$_id.last_name',
-                    'visit_count': 1
+                    'specialization': '$_id',
+                    'doctor_count': 1,
+                    'total_appointments': 1,
+                    'unique_patients': {'$size': {'$reduce': {
+                        'input': '$unique_patients',
+                        'initialValue': [],
+                        'in': {'$setUnion': ['$$value', '$$this']}
+                    }}}
                 }
             }
         ]
