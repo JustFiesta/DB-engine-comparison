@@ -80,7 +80,7 @@ def test_mongodb_query():
         doctors_collection = db['Appointments']
         
         pipeline = [
-             {'$match': {'diagnosis': 'Flu'}},
+            {'$match': {'diagnosis': 'Flu'}},
             {'$lookup': {
                 'from': 'Doctors',
                 'localField': 'doctor_id',
@@ -107,9 +107,13 @@ def test_mongodb_query():
         cursor = doctors_collection.aggregate(pipeline)
         all_results = list(cursor)
 
+        if not all_results:
+            print("No results found. Check data consistency.")
+
         end_time = time.time()
         query_time = end_time - start_time
         print(f"Query executed in {query_time} seconds. Total results: {len(all_results)}")
+        print("Results:", all_results)
         
         client.close()
 
@@ -118,6 +122,7 @@ def test_mongodb_query():
     except Exception as e:
         print(f"Error: {e}")
         return None
+
     
 def save_to_csv(data, filename="system_stats.csv"):
     """Funkcja zapisująca wyniki do pliku CSV"""
