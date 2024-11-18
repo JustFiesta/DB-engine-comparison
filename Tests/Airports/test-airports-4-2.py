@@ -80,33 +80,53 @@ def test_mongodb_query():
 
         pipeline = [
             {
-                "$group": {
-                    "_id": 1,
-                    "avgDistance": { "$avg": "$DISTANCE" }
+                "$facet": {
+                    "avgDist": [
+                        {
+                            "$group": {
+                                "_id": 1,
+                                "avgDistance": { "$avg": "$DISTANCE" }
+                            }
+                        }
+                    ],
+                    "flights": [
+                        {
+                            "$lookup": {
+                                "from": "Airports",
+                                "localField": "ORIGIN_AIRPORT",
+                                "foreignField": "IATA_CODE",
+                                "as": "airport_info"
+                            }
+                        },
+                        {
+                            "$unwind": "$airport_info"
+                        }
+                    ]
                 }
             },
             {
-                "$lookup": {
-                    "from": "airports",
-                    "localField": "ORIGIN_AIRPORT",
-                    "foreignField": "IATA_CODE",
-                    "as": "airport_info"
+                "$unwind": "$avgDist"
+            },
+            {
+                "$project": {
+                    "results": {
+                        "$filter": {
+                            "input": "$flights",
+                            "as": "flight",
+                            "cond": { "$gt": ["$$flight.DISTANCE", "$avgDist.avgDistance"] }
+                        }
+                    }
                 }
             },
             {
-                "$unwind": "$airport_info"
-            },
-            {
-                "$match": {
-                    "DISTANCE": { "$gt": "$avgDistance" }
-                }
+                "$unwind": "$results"
             },
             {
                 "$group": {
                     "_id": {
-                        "airport": "$airport_info.AIRPORT",
-                        "city": "$airport_info.CITY",
-                        "state": "$airport_info.STATE"
+                        "airport": "$results.airport_info.AIRPORT",
+                        "city": "$results.airport_info.CITY",
+                        "state": "$results.airport_info.STATE"
                     }
                 }
             },
@@ -117,9 +137,10 @@ def test_mongodb_query():
                 }
             }
         ]
+
         start_time = time.time()
 
-        cursor = collection.aggregate(pipeline)
+        cursor = collection.aggregate(pipeline, allowDiskUse=True)
         all_results = []
 
         for doc in cursor:
