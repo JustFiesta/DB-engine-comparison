@@ -93,7 +93,7 @@ def test_mongodb_query():
                                 '$expr': {'$eq': ['$doctor_id', '$$doctor_id']}
                             }},
                             {'$lookup': {
-                                'from': 'patients',
+                                'from': 'Patients',
                                 'localField': 'patient_id',
                                 'foreignField': 'patient_id',
                                 'as': 'patient'
