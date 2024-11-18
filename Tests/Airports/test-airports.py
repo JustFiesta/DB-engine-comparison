@@ -77,7 +77,7 @@ def test_mongodb_query(collection_name, query=None, pipeline=None, projection=No
             print(f"MongoDB: Executing query on collection '{collection_name}': {query}")
             cursor = collection.find(query, projection) if projection else collection.find(query)
         else:
-            raise ValueError("Either 'query' or 'pipeline' must be provided.")
+            raise ValueError("Either 'query' or 'pipeline' must be provided")
 
         all_results = [doc for doc in cursor]
 
@@ -92,8 +92,6 @@ def test_mongodb_query(collection_name, query=None, pipeline=None, projection=No
     except Exception as e:
         print(f"Error: {e}")
         return None
-
-
 
 def save_to_csv(data, filename="system_stats.csv"):
     """Funkcja zapisująca wyniki do pliku CSV"""
@@ -543,7 +541,10 @@ def test_database_performance():
 
     for query_set in queries['MongoDB']:
         mongodb_query_time = test_mongodb_query(
-            query_set['collection'], query_set['query'], query_set['projection']
+            collection_name=query_set['collection'],
+            query=query_set.get('query'),
+            pipeline=query_set.get('pipeline'),
+            projection=query_set.get('projection')
         )
         system_stats = collect_system_stats()
         system_stats['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
