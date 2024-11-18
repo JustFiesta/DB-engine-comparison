@@ -63,7 +63,7 @@ def test_mongodb_query(collection_name, query=None, pipeline=None, projection=No
     """
     try:
         client = MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=5000)
-        db = client['Airports']
+        db = client['Bikes']
         collection = db[collection_name]
 
         start_time = time.time()
