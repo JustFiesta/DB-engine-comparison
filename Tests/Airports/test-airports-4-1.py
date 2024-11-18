@@ -30,7 +30,23 @@ def test_mariadb_query():
             database='Airports'
         )
         cursor = conn.cursor()
-        query = "SELECT * FROM Flights f1 WHERE ARRIVAL_DELAY = ( SELECT MAX(ARRIVAL_DELAY) FROM Flights f2 WHERE f1.YEAR = f2.YEAR AND f1.MONTH = f2.MONTH AND f1.DAY = f2.DAY );"
+        query = """SELECT 
+                f.AIRLINE,
+                a.AIRLINE as AIRLINE_NAME,
+                f.MONTH,
+                ROUND(AVG(f.ARRIVAL_DELAY), 2) as AVG_DELAY,
+                COUNT(*) as FLIGHT_COUNT,
+                ROUND(AVG(f.DISTANCE), 2) as AVG_DISTANCE
+            FROM flights f
+            JOIN airlines a ON f.AIRLINE = a.IATA_CODE
+            WHERE f.DISTANCE > (
+                SELECT AVG(DISTANCE) 
+                FROM flights
+            )
+            GROUP BY f.AIRLINE, f.MONTH
+            HAVING AVG_DELAY > 0
+            ORDER BY AVG_DELAY DESC; 
+        """
 
         start_time = time.time()
 
@@ -76,117 +92,57 @@ def test_mongodb_query():
         db = client['Airports']
         collection = db['Flights']
 
-        # Tworzenie indeksów dla optymalizacji
         print("Creating indexes for date fields...")
-        collection.create_index([("YEAR", 1)])
-        collection.create_index([("MONTH", 1)])
-        collection.create_index([("DAY", 1)])
-        collection.create_index([("ARRIVAL_DELAY", 1)])
 
-        # Pipeline dla znalezienia maksymalnych opóźnień
         pipeline = [
-            {
-                # Grupowanie po dacie i znalezienie maksymalnego opóźnienia
-                "$group": {
-                    "_id": {
-                        "year": "$YEAR",
-                        "month": "$MONTH",
-                        "day": "$DAY"
-                    },
-                    "maxDelay": {"$max": "$ARRIVAL_DELAY"},
-                    "count": {"$sum": 1}
-                }
-            },
-            {
-                # Połączenie z oryginalną kolekcją aby znaleźć pełne informacje o locie
-                "$lookup": {
-                    "from": "Flights",
-                    "let": {
-                        "year": "$_id.year",
-                        "month": "$_id.month",
-                        "day": "$_id.day",
-                        "maxDelay": "$maxDelay"
-                    },
-                    "pipeline": [
-                        {
-                            "$match": {
-                                "$expr": {
-                                    "$and": [
-                                        {"$eq": ["$YEAR", "$$year"]},
-                                        {"$eq": ["$MONTH", "$$month"]},
-                                        {"$eq": ["$DAY", "$$day"]},
-                                        {"$eq": ["$ARRIVAL_DELAY", "$$maxDelay"]}
-                                    ]
+            [
+                {
+                    "$lookup": {
+                        "from": "airlines",
+                        "localField": "AIRLINE",
+                        "foreignField": "IATA_CODE",
+                        "as": "airline_info"
+                    }
+                },
+                {
+                    "$unwind": "$airline_info"
+                },
+                {
+                    "$group": {
+                        "_id": null,
+                        "avgDistance": { "$avg": "$DISTANCE" }
+                    }
+                },
+                {
+                    "$lookup": {
+                        "from": "flights",
+                        "pipeline": [
+                            {
+                                "$match": {
+                                    "DISTANCE": { "$gt": "$avgDistance" }
+                                }
+                            },
+                            {
+                                "$group": {
+                                    "_id": {
+                                        "airline": "$AIRLINE",
+                                        "month": "$MONTH"
+                                    },
+                                    "avgDelay": { "$avg": "$ARRIVAL_DELAY" },
+                                    "flightCount": { "$sum": 1 },
+                                    "avgDistance": { "$avg": "$DISTANCE" }
+                                }
+                            },
+                            {
+                                "$match": {
+                                    "avgDelay": { "$gt": 0 }
                                 }
                             }
-                        },
-                        {
-                            "$lookup": {
-                                "from": "Airlines",
-                                "localField": "AIRLINE",
-                                "foreignField": "IATA_CODE",
-                                "as": "airline_info"
-                            }
-                        },
-                        {
-                            "$unwind": "$airline_info"
-                        },
-                        {
-                            "$lookup": {
-                                "from": "Airports",
-                                "localField": "ORIGIN_AIRPORT",
-                                "foreignField": "IATA_CODE",
-                                "as": "origin_airport"
-                            }
-                        },
-                        {
-                            "$unwind": "$origin_airport"
-                        },
-                        {
-                            "$lookup": {
-                                "from": "Airports",
-                                "localField": "DESTINATION_AIRPORT",
-                                "foreignField": "IATA_CODE",
-                                "as": "destination_airport"
-                            }
-                        },
-                        {
-                            "$unwind": "$destination_airport"
-                        }
-                    ],
-                    "as": "flight_details"
+                        ],
+                        "as": "results"
+                    }
                 }
-            },
-            {
-                "$unwind": "$flight_details"
-            },
-            {
-                "$project": {
-                    "_id": 0,
-                    "date": {
-                        "$concat": [
-                            {"$toString": "$_id.year"}, "-",
-                            {"$toString": "$_id.month"}, "-",
-                            {"$toString": "$_id.day"}
-                        ]
-                    },
-                    "maxDelay": "$maxDelay",
-                    "flightNumber": "$flight_details.FLIGHT_NUMBER",
-                    "airline": "$flight_details.airline_info.AIRLINE",
-                    "originAirport": "$flight_details.origin_airport.AIRPORT",
-                    "destinationAirport": "$flight_details.destination_airport.AIRPORT",
-                    "scheduledDeparture": "$flight_details.SCHEDULED_DEPARTURE",
-                    "scheduledArrival": "$flight_details.SCHEDULED_ARRIVAL",
-                    "actualDeparture": "$flight_details.DEPARTURE_TIME",
-                    "actualArrival": "$flight_details.ARRIVAL_TIME"
-                }
-            },
-            {
-                "$sort": {
-                    "date": 1,
-                    "maxDelay": -1
-                }
-            }
+            ]
         ]
 
         start_time = time.time()
