@@ -40,7 +40,7 @@ def test_mariadb_query():
         ON 
             a.doctor_id = d.doctor_id
         WHERE 
-            a.diagnosis = 'Flu';
+            a.diagnosis = 'Cold';
         """  
         start_time = time.time()
 
@@ -127,7 +127,7 @@ def save_to_csv(data, filename="system_stats.csv"):
 
 def test_database_performance():
     """
-    Funkcja do jednorazowego testowania wydajności bazy danych.
+    Funkcja do testowania wydajności bazy danych.
     Wykonuje zapytania do baz danych, zbiera statystyki systemowe
     i zapisuje wynik w pliku CSV.
     """
