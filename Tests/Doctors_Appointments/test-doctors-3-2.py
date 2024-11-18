@@ -80,49 +80,44 @@ def test_mongodb_query():
         doctors_collection = db['Doctors']
         
         pipeline = [
-            {
-            'collection': 'Appointments',
-            'pipeline': [
-                {'$group': {
-                    '_id': '$doctor_id',
-                    'patient_count': {'$sum': 1}
-                }},
-                {'$sort': {'patient_count': -1}},
-                {'$limit': 1},
-                {'$lookup': {
-                    'from': 'Appointments',
-                    'let': {'doctor_id': '$_id'},
-                    'pipeline': [
-                        {'$match': {
-                            '$expr': {'$eq': ['$doctor_id', '$$doctor_id']}
-                        }},
-                        {'$lookup': {
-                            'from': 'patients',
-                            'localField': 'patient_id',
-                            'foreignField': 'patient_id',
-                            'as': 'patient'
-                        }},
-                        {'$unwind': '$patient'},
-                        {'$group': {
-                            '_id': {
-                                'patient_id': '$patient_id',
-                                'first_name': '$patient.first_name',
-                                'last_name': '$patient.last_name'
-                            }
-                        }},
-                        {'$project': {
-                            'first_name': '$_id.first_name',
-                            'last_name': '$_id.last_name',
-                            '_id': 0
-                        }},
-                        {'$limit': 10}
-                    ],
-                    'as': 'patients'
-                }},
-                {'$unwind': '$patients'},
-                {'$replaceRoot': {'newRoot': '$patients'}}
-            ]
-        }
+             {'$group': {
+                        '_id': '$doctor_id',
+                        'patient_count': {'$sum': 1}
+                    }},
+                    {'$sort': {'patient_count': -1}},
+                    {'$limit': 1},
+                    {'$lookup': {
+                        'from': 'appointments',
+                        'let': {'doctor_id': '$_id'},
+                        'pipeline': [
+                            {'$match': {
+                                '$expr': {'$eq': ['$doctor_id', '$$doctor_id']}
+                            }},
+                            {'$lookup': {
+                                'from': 'patients',
+                                'localField': 'patient_id',
+                                'foreignField': 'patient_id',
+                                'as': 'patient'
+                            }},
+                            {'$unwind': '$patient'},
+                            {'$group': {
+                                '_id': {
+                                    'patient_id': '$patient_id',
+                                    'first_name': '$patient.first_name',
+                                    'last_name': '$patient.last_name'
+                                }
+                            }},
+                            {'$project': {
+                                'first_name': '$_id.first_name',
+                                'last_name': '$_id.last_name',
+                                '_id': 0
+                            }},
+                            {'$limit': 10}
+                        ],
+                        'as': 'patients'
+                    }},
+                    {'$unwind': '$patients'},
+                    {'$replaceRoot': {'newRoot': '$patients'}}
         ]
 
         start_time = time.time()
