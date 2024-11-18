@@ -30,7 +30,11 @@ def test_mariadb_query():
             database='bikes'
         )
         cursor = conn.cursor()
-        query = "SELECT t.trip_id, t.tripduration, t.starttime, start_station.station_name AS start_station, end_station.station_name AS end_station FROM TripUsers t JOIN Stations start_station ON t.start_station_id = start_station.station_id JOIN Stations end_station ON t.end_station_id = end_station.station_id;"  
+        query = """SELECT 
+        t.trip_id, t.tripduration, t.starttime, start_station.station_name AS start_station, end_station.station_name AS end_station 
+        FROM TripUsers t JOIN Stations start_station ON t.start_station_id = start_station.station_id 
+        JOIN Stations end_station ON t.end_station_id = end_station.station_id;"""
+          
         start_time = time.time()
 
         print("MariaDB: Executing query...")
@@ -122,20 +126,16 @@ def save_to_csv(data, filename="system_stats.csv"):
 
 def test_database_performance():
     """
-    Funkcja do jednorazowego testowania wydajności bazy danych.
+    Funkcja do testowania wydajności bazy danych.
     Wykonuje zapytania do baz danych, zbiera statystyki systemowe
     i zapisuje wynik w pliku CSV.
     """
-    # Testowanie MariaDB
     mariadb_query_time = test_mariadb_query()  
 
-    # Testowanie MongoDB
     mongodb_query_time = test_mongodb_query() 
 
-    # Zbieranie statystyk systemowych
     system_stats = collect_system_stats()
     
-    # Dodanie danych do statystyk
     system_stats['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
 
     if mariadb_query_time is not None:
@@ -149,4 +149,5 @@ def test_database_performance():
         save_to_csv(system_stats)
 
 if __name__ == '__main__':
-    test_database_performance()
+    for i in range(3):
+        test_database_performance()
