@@ -115,16 +115,6 @@ def test_mongodb_query():
                     'last_name': '$patient.last_name',
                     '_id': 0
                 }
-            },
-            {
-                '$group': {
-                    '_id': {
-                        'first_name': '$first_name',
-                        'last_name': '$last_name'
-                    },
-                    'first_name': {'$first': '$first_name'},
-                    'last_name': {'$first': '$last_name'}
-                }
             }
         ]
 
