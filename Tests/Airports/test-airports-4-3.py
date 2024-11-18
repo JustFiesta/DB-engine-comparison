@@ -30,7 +30,24 @@ def test_mariadb_query():
             database='Airports'
         )
         cursor = conn.cursor()
-        query = "SELECT CITY FROM airports WHERE IATA_CODE IN ( SELECT ORIGIN_AIRPORT FROM flights WHERE CANCELLED = 1 GROUP BY ORIGIN_AIRPORT ORDER BY COUNT(*) DESC LIMIT 1 ); "
+        query = """SELECT 
+            f.MONTH,
+            a.AIRLINE as AIRLINE_NAME,
+            COUNT(*) as DELAYED_FLIGHTS
+        FROM Flights f
+        JOIN Airlines a ON f.AIRLINE = a.IATA_CODE
+        WHERE f.ARRIVAL_DELAY > 0
+        GROUP BY f.MONTH, f.AIRLINE
+        HAVING DELAYED_FLIGHTS = (
+            SELECT COUNT(*) 
+            FROM Flights f2 
+            WHERE f2.MONTH = f.MONTH 
+            AND f2.ARRIVAL_DELAY > 0 
+            GROUP BY f2.AIRLINE 
+            ORDER BY COUNT(*) DESC 
+            LIMIT 1
+        )
+        ORDER BY f.MONTH; """
 
         start_time = time.time()
 
@@ -69,29 +86,51 @@ def test_mongodb_query():
         print("MongoDB: Executing query...")
 
         pipeline = [
-            {"$match": {"CANCELLED": 1}},
             {
-                "$group": {
-                    "_id": "$ORIGIN_AIRPORT",
-                    "cancel_count": {"$sum": 1}
+                "$match": {
+                    "ARRIVAL_DELAY": { "$gt": 0 }
                 }
             },
-            {"$sort": {"cancel_count": -1}},
-            {"$limit": 1},
             {
                 "$lookup": {
-                    "from": "airports",
-                    "localField": "_id",
+                    "from": "Airlines",
+                    "localField": "AIRLINE",
                     "foreignField": "IATA_CODE",
-                    "as": "origin_airport"
+                    "as": "airline_info"
                 }
             },
-            {"$unwind": "$origin_airport"},
             {
-                "$project": {
-                    "city": "$origin_airport.CITY",
-                    "_id": 0
+                "$unwind": "$airline_info"
+            },
+            {
+                "$group": {
+                    "_id": {
+                        "month": "$MONTH",
+                        "airline": "$AIRLINE",
+                        "airlineName": "$airline_info.AIRLINE"
+                    },
+                    "delayedFlights": { "$sum": 1 }
                 }
+            },
+            {
+                "$sort": {
+                    "_id.month": 1,
+                    "delayedFlights": -1
+                }
+            },
+            {
+                "$group": {
+                    "_id": "$_id.month",
+                    "airline": {
+                        "$first": {
+                            "name": "$_id.airlineName",
+                            "delayedFlights": "$delayedFlights"
+                        }
+                    }
+                }
+            },
+            {
+                "$sort": { "_id": 1 }
             }
         ]
         start_time = time.time()
