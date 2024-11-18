@@ -30,7 +30,17 @@ def test_mariadb_query():
             database='Airports'
         )
         cursor = conn.cursor()
-        query = "SELECT AIRLINE FROM airlines WHERE IATA_CODE IN ( SELECT AIRLINE FROM flights WHERE ARRIVAL_DELAY > 0 GROUP BY AIRLINE HAVING COUNT(*) > 1000 );"
+        query = """SELECT 
+            DISTINCT a.AIRPORT,
+            a.CITY,
+            a.STATE
+        FROM Airports a
+        JOIN Flights f ON a.IATA_CODE = f.ORIGIN_AIRPORT
+        WHERE f.DISTANCE > (
+            SELECT AVG(DISTANCE) 
+            FROM Flights
+        )
+        ORDER BY a.STATE, a.CITY; """
 
         start_time = time.time()
 
@@ -69,27 +79,41 @@ def test_mongodb_query():
         print("MongoDB: Executing query...")
 
         pipeline = [
-            {"$match": {"ARRIVAL_DELAY": {"$gt": 0}}},
             {
                 "$group": {
-                    "_id": "$AIRLINE",
-                    "delayed_flights": {"$sum": 1}
+                    "_id": 1,
+                    "avgDistance": { "$avg": "$DISTANCE" }
                 }
             },
-            {"$match": {"delayed_flights": {"$gt": 1000}}},
             {
                 "$lookup": {
-                    "from": "airlines",
-                    "localField": "_id",
+                    "from": "airports",
+                    "localField": "ORIGIN_AIRPORT",
                     "foreignField": "IATA_CODE",
-                    "as": "airline_info"
+                    "as": "airport_info"
                 }
             },
-            {"$unwind": "$airline_info"},
             {
-                "$project": {
-                    "airline_name": "$airline_info.AIRLINE",
-                    "_id": 0
+                "$unwind": "$airport_info"
+            },
+            {
+                "$match": {
+                    "DISTANCE": { "$gt": "$avgDistance" }
+                }
+            },
+            {
+                "$group": {
+                    "_id": {
+                        "airport": "$airport_info.AIRPORT",
+                        "city": "$airport_info.CITY",
+                        "state": "$airport_info.STATE"
+                    }
+                }
+            },
+            {
+                "$sort": {
+                    "_id.state": 1,
+                    "_id.city": 1
                 }
             }
         ]
