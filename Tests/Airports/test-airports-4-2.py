@@ -75,58 +75,44 @@ def test_mongodb_query():
     try:
         client = MongoClient('mongodb://localhost:27017/', serverSelectionTimeoutMS=5000)
         db = client['Airports']
-        collection = db['Flights']  
+        collection = db['Flights']
         print("MongoDB: Executing query...")
 
-        pipeline = [
+        avg_pipeline = [
             {
-                "$facet": {
-                    "avgDist": [
-                        {
-                            "$group": {
-                                "_id": 1,
-                                "avgDistance": { "$avg": "$DISTANCE" }
-                            }
-                        }
-                    ],
-                    "flights": [
-                        {
-                            "$lookup": {
-                                "from": "Airports",
-                                "localField": "ORIGIN_AIRPORT",
-                                "foreignField": "IATA_CODE",
-                                "as": "airport_info"
-                            }
-                        },
-                        {
-                            "$unwind": "$airport_info"
-                        }
-                    ]
+                "$group": {
+                    "_id": None,
+                    "avgDistance": { "$avg": "$DISTANCE" }
+                }
+            }
+        ]
+        
+        avg_result = list(collection.aggregate(avg_pipeline))
+        avg_distance = avg_result[0]['avgDistance']
+
+        main_pipeline = [
+            {
+                "$match": {
+                    "DISTANCE": { "$gt": avg_distance }
                 }
             },
             {
-                "$unwind": "$avgDist"
-            },
-            {
-                "$project": {
-                    "results": {
-                        "$filter": {
-                            "input": "$flights",
-                            "as": "flight",
-                            "cond": { "$gt": ["$$flight.DISTANCE", "$avgDist.avgDistance"] }
-                        }
-                    }
+                "$lookup": {
+                    "from": "Airports",
+                    "localField": "ORIGIN_AIRPORT",
+                    "foreignField": "IATA_CODE",
+                    "as": "airport_info"
                 }
             },
             {
-                "$unwind": "$results"
+                "$unwind": "$airport_info"
             },
             {
                 "$group": {
                     "_id": {
-                        "airport": "$results.airport_info.AIRPORT",
-                        "city": "$results.airport_info.CITY",
-                        "state": "$results.airport_info.STATE"
+                        "airport": "$airport_info.AIRPORT",
+                        "city": "$airport_info.CITY",
+                        "state": "$airport_info.STATE"
                     }
                 }
             },
@@ -137,20 +123,29 @@ def test_mongodb_query():
                 }
             }
         ]
+
         start_time = time.time()
-
-        cursor = collection.aggregate(pipeline)
+        
+        cursor = collection.aggregate(main_pipeline, allowDiskUse=True)
         all_results = []
-
+        
+        batch_size = 1000
+        current_batch = []
+        
         for doc in cursor:
-            all_results.append(doc)  
+            current_batch.append(doc)
+            if len(current_batch) >= batch_size:
+                all_results.extend(current_batch)
+                current_batch = []
+        
+        if current_batch:
+            all_results.extend(current_batch)
 
         end_time = time.time()
         query_time = end_time - start_time
         print(f"Query executed in {query_time} seconds. Total fetched: {len(all_results)}")
 
         client.close()
-
         return query_time
 
     except Exception as e:
