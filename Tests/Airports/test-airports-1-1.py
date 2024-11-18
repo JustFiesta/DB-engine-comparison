@@ -118,5 +118,5 @@ def test_database_performance():
         save_to_csv(system_stats)
 
 if __name__ == '__main__':
-
-    test_database_performance()
+    for i in range(3):
+        test_database_performance()
