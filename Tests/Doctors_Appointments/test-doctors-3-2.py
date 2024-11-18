@@ -82,7 +82,7 @@ def test_mongodb_query():
         pipeline = [
              {'$match': {'diagnosis': 'Flu'}},
             {'$lookup': {
-                'from': 'doctors',
+                'from': 'Doctors',
                 'localField': 'doctor_id',
                 'foreignField': 'doctor_id',
                 'as': 'doctor'
