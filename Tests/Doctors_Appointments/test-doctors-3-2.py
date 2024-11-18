@@ -112,10 +112,10 @@ def test_mongodb_query():
                                 '_id': 0
                             }}
                         ],
-                        'as': 'patients'
+                        'as': 'Patients'
                     }},
-                    {'$unwind': '$patients'},
-                    {'$replaceRoot': {'newRoot': '$patients'}}
+                    {'$unwind': '$Patients'},
+                    {'$replaceRoot': {'newRoot': '$Patients'}}
         ]
 
         start_time = time.time()
