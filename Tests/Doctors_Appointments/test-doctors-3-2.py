@@ -85,7 +85,6 @@ def test_mongodb_query():
                         'patient_count': {'$sum': 1}
                     }},
                     {'$sort': {'patient_count': -1}},
-                    {'$limit': 1},
                     {'$lookup': {
                         'from': 'appointments',
                         'let': {'doctor_id': '$_id'},
@@ -111,8 +110,7 @@ def test_mongodb_query():
                                 'first_name': '$_id.first_name',
                                 'last_name': '$_id.last_name',
                                 '_id': 0
-                            }},
-                            {'$limit': 10}
+                            }}
                         ],
                         'as': 'patients'
                     }},
