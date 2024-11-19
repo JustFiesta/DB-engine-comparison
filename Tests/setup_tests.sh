@@ -39,14 +39,12 @@ fi
 
 # Uruchomienie skryptu Pythona
 echo "Uruchamianie skryptu do testowania..."
-python3 ./tests.py
+python3 ./run_tests.py
 
 # Dezaktywacja środowiska wirtualnego
 deactivate
 
-# TODO - poprawne przeniesienie ostatecznego wyniku do home
-mv ./Airports/system_stats_airports.csv "$HOME"
-mv ./Airports/system_stats_bikes.csv "$HOME"
-mv ./Airports/system_stats_docstors_appointments.csv "$HOME"
+# Przenieś wynik do Home
+mv ./system_stats.xlsx "$HOME"
 
 echo "Skrypt zakończył działanie."
