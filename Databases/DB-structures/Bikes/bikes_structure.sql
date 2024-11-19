@@ -17,12 +17,10 @@ CREATE TABLE TripUsers (
     tripduration INT,
     starttime DATETIME,
     stoptime DATETIME,
-    start_station_id INT,
     start_station_name VARCHAR(255),
-    end_station_id INT,
     end_station_name VARCHAR(255),
     bikeid INT,
-    birth_year INT,
+    birth_year INT NULL,
     gender INT,
     usertype VARCHAR(255),
 
