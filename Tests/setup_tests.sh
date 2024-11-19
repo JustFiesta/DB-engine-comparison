@@ -40,7 +40,7 @@ fi
 
 # Wyszukanie i uruchomienie trzech skryptów testowych Python
 echo "Wyszukiwanie testów Python w bieżącym katalogu..."
-test_files=( $(find . -maxdepth 1 -type f -name "*.py" | sort | grep -v "$(basename "$0")") )
+test_files=( $(find . -maxdepth 1 -type f -name "test_*.py" | sort | grep -v "$(basename "$0")") )
 
 if [ ${#test_files[@]} -eq 0 ]; then
     echo "Nie znaleziono żadnych skryptów testowych w bieżącym katalogu."
@@ -49,7 +49,6 @@ if [ ${#test_files[@]} -eq 0 ]; then
 fi
 
 echo "Znaleziono następujące testy: ${test_files[*]}"
-counter=0
 for test_file in "${test_files[@]}"; do
     echo "Uruchamianie testu: $test_file"
     python3 "$test_file"
@@ -59,11 +58,6 @@ for test_file in "${test_files[@]}"; do
         echo "Błąd podczas uruchamiania testu: $test_file"
         deactivate
         exit 1
-    fi
-
-    counter=$((counter+1))
-    if [ $counter -eq 3 ]; then
-        break
     fi
 done
 
