@@ -482,51 +482,61 @@ def test_database_performance():
                 'query': None,
                 'pipeline': [
                     {
-                        "$facet": {
-                            "avgDistance": [
-                                {
-                                    "$group": {
-                                        "_id": None,
-                                        "avg": { "$avg": "$DISTANCE" }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    {
-                        "$unwind": "$avgDistance"
-                    },
-                    {
-                        "$lookup": {
-                            "from": "Airports",
-                            "localField": "ORIGIN_AIRPORT",
-                            "foreignField": "IATA_CODE",
-                            "as": "airport_info"
-                        }
-                    },
-                    {
-                        "$unwind": "$airport_info"
-                    },
-                    {
                         "$match": {
-                            "DISTANCE": { "$gt": "$avgDistance.avg" }
+                            "ARRIVAL_DELAY": {"$gt": 0}  
                         }
                     },
                     {
                         "$group": {
                             "_id": {
-                                "airport": "$airport_info.AIRPORT",
-                                "city": "$airport_info.CITY",
-                                "state": "$airport_info.STATE"
+                                "month": "$MONTH",
+                                "airline": "$AIRLINE"
+                            },
+                            "delayed_flights": {"$sum": 1}
+                        }
+                    },
+                    {
+                        "$group": {
+                            "_id": "$_id.month",
+                            "maxDelays": {"$max": "$delayed_flights"},
+                            "allData": {
+                                "$push": {
+                                    "airline": "$_id.airline",
+                                    "delayed_flights": "$delayed_flights"
+                                }
                             }
                         }
                     },
                     {
-                        "$sort": {
-                            "_id.state": 1,
-                            "_id.city": 1
+                        "$project": {
+                            "airline_data": {
+                                "$filter": {
+                                    "input": "$allData",
+                                    "as": "item",
+                                    "cond": {"$eq": ["$$item.delayed_flights", "$maxDelays"]}
+                                }
+                            }
                         }
-                    }        
+                    },
+                    {"$unwind": "$airline_data"},
+                    {
+                        "$lookup": {
+                            "from": "Airlines",
+                            "localField": "airline_data.airline",
+                            "foreignField": "IATA_CODE",
+                            "as": "airline_info"
+                        }
+                    },
+                    {"$unwind": "$airline_info"},
+                    {
+                        "$project": {
+                            "_id": 0,
+                            "month": "$_id",
+                            "airline_name": "$airline_info.AIRLINE",
+                            "delayed_flights": "$airline_data.delayed_flights"
+                        }
+                    },
+                    {"$sort": {"month": 1}}
                 ],
                 'projection': None
             },
