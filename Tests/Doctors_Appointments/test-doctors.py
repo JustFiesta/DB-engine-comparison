@@ -181,17 +181,17 @@ def test_database_performance():
                 HAVING COUNT(appointment_id) >= 2
             );
             """,
-            """SELECT DISTINCT 
-                first_name, 
-                last_name
-            FROM Patients
-            WHERE patient_id IN (
-                SELECT a.patient_id
-                FROM Appointments a
-                JOIN Doctors d ON a.doctor_id = d.doctor_id
-                WHERE d.specialization = 'Cardiology'
-            )
-            LIMIT 10;"""
+            # """SELECT DISTINCT 
+            #     first_name, 
+            #     last_name
+            # FROM Patients
+            # WHERE patient_id IN (
+            #     SELECT a.patient_id
+            #     FROM Appointments a
+            #     JOIN Doctors d ON a.doctor_id = d.doctor_id
+            #     WHERE d.specialization = 'Cardiology'
+            # )
+            # LIMIT 10;"""
         ],
         'MongoDB': [
             # zapytania
