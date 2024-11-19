@@ -2,7 +2,7 @@
 chuchujariport
 """
 
-from Tests.testing_functions import test_database_performance
+from testing_functions import test_database_performance
 
 def main():
     db_name = "Airports"
@@ -407,3 +407,6 @@ def main():
     }
 
     test_database_performance(queries, db_name)
+
+if __name__ == "__main__":
+    main()
