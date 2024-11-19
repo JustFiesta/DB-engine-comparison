@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #------------------
-# Script for setting venv and running tests
+# Script for setting up venv and running tests
 
 # Sprawdzenie, czy Python jest zainstalowany
 if ! command -v python3 &> /dev/null; then
@@ -34,17 +34,48 @@ if [ $? -eq 0 ]; then
     echo "Zależności zostały zainstalowane pomyślnie."
 else
     echo "Nie udało się zainstalować zależności."
+    deactivate
     exit 1
 fi
 
-# Uruchomienie skryptu Pythona
-echo "Uruchamianie skryptu do testowania..."
-python3 ./run_tests.py
+# Wyszukanie i uruchomienie trzech skryptów testowych Python
+echo "Wyszukiwanie testów Python w bieżącym katalogu..."
+test_files=( $(find . -maxdepth 1 -type f -name "*.py" | sort | grep -v "$(basename "$0")") )
+
+if [ ${#test_files[@]} -eq 0 ]; then
+    echo "Nie znaleziono żadnych skryptów testowych w bieżącym katalogu."
+    deactivate
+    exit 1
+fi
+
+echo "Znaleziono następujące testy: ${test_files[*]}"
+counter=0
+for test_file in "${test_files[@]}"; do
+    echo "Uruchamianie testu: $test_file"
+    python3 "$test_file"
+
+    # Obsługa błędów
+    if [ $? -ne 0 ]; then
+        echo "Błąd podczas uruchamiania testu: $test_file"
+        deactivate
+        exit 1
+    fi
+
+    counter=$((counter+1))
+    if [ $counter -eq 3 ]; then
+        break
+    fi
+done
 
 # Dezaktywacja środowiska wirtualnego
 deactivate
 
-# Przenieś wynik do Home
-mv ./system_stats.xlsx "$HOME"
+# Przeniesienie wyników do katalogu domowego
+if [ -f "./system_stats.xlsx" ]; then
+    echo "Przenoszenie pliku wynikowego do katalogu domowego..."
+    mv ./system_stats.xlsx "$HOME"
+else
+    echo "Brak pliku wynikowego do przeniesienia."
+fi
 
 echo "Skrypt zakończył działanie."
