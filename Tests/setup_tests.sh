@@ -27,7 +27,7 @@ source .venv/bin/activate
 # Instalacja zależności
 echo "Instalacja zależności..."
 pip install --upgrade pip
-pip install pymongo psutil mysql mysql-connector-python
+pip install pymongo psutil mysql-connector-python
 
 # Sprawdzenie instalacji zależności
 if [ $? -eq 0 ]; then
