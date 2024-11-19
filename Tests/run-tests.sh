@@ -44,4 +44,9 @@ python3 ./tests.py
 # Dezaktywacja środowiska wirtualnego
 deactivate
 
+# TODO - poprawne przeniesienie ostatecznego wyniku do home
+mv ./Airports/system_stats_airports.csv "$HOME"
+mv ./Airports/system_stats_bikes.csv "$HOME"
+mv ./Airports/system_stats_docstors_appointments.csv "$HOME"
+
 echo "Skrypt zakończył działanie."
