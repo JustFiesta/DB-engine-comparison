@@ -1,5 +1,5 @@
 """
-chuchujariport
+Moduł testujący dla bazy Airports
 """
 
 from testing_functions import test_database_performance

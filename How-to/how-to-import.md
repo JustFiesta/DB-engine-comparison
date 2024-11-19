@@ -35,6 +35,7 @@ Every database structure is present in its own subfolder.
 
     ```sql
     LOAD DATA LOCAL INFILE 'path/to/file.csv' INTO TABLE Table_name FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 ROWS;
+    (set, correct, dataset, columns, for, corresponding, db, structure)
     ```
 
 5. Enable foreign key checks when procedure is complete

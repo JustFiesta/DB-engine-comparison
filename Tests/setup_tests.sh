@@ -27,7 +27,7 @@ source .venv/bin/activate
 # Instalacja zależności
 echo "Instalacja zależności..."
 pip install --upgrade pip
-pip install pymongo psutil mysql-connector-python
+pip install pandas pymongo psutil mysql-connector-python
 
 # Sprawdzenie instalacji zależności
 if [ $? -eq 0 ]; then
@@ -40,7 +40,7 @@ fi
 
 # Wyszukanie i uruchomienie trzech skryptów testowych Python
 echo "Wyszukiwanie testów Python w bieżącym katalogu..."
-test_files=( $(find . -maxdepth 1 -type f -name "test_*.py" | sort | grep -v "$(basename "$0")") )
+test_files=( $(find . -maxdepth 2 -type f -name "test_*.py" | sort | grep -v "$(basename "$0")") )
 
 if [ ${#test_files[@]} -eq 0 ]; then
     echo "Nie znaleziono żadnych skryptów testowych w bieżącym katalogu."
@@ -60,6 +60,9 @@ for test_file in "${test_files[@]}"; do
         exit 1
     fi
 done
+
+# Uruchomienie importu csv do xlsx
+python3 ./csv_to_xlsx.py
 
 # Dezaktywacja środowiska wirtualnego
 deactivate
