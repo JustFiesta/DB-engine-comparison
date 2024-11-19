@@ -145,15 +145,15 @@ def test_database_performance():
             JOIN Doctors d ON a.doctor_id = d.doctor_id
             JOIN Patients p ON a.patient_id = p.patient_id
             LIMIT 10;""",
-            """SELECT 
-                p.first_name,
-                p.last_name,
-                COUNT(*) as total_appointments
-            FROM Appointments a
-            JOIN Patients p ON a.patient_id = p.patient_id
-            GROUP BY a.patient_id, p.first_name, p.last_name
-            HAVING COUNT(*) > 7
-            LIMIT 10;""",
+            # """SELECT 
+            #     p.first_name,
+            #     p.last_name,
+            #     COUNT(*) as total_appointments
+            # FROM Appointments a
+            # JOIN Patients p ON a.patient_id = p.patient_id
+            # GROUP BY a.patient_id, p.first_name, p.last_name
+            # HAVING COUNT(*) > 7
+            # LIMIT 10;""",
             # podzapytania
             """WITH DoctorWithMostPatients AS (
                 SELECT 
@@ -172,15 +172,15 @@ def test_database_performance():
             JOIN DoctorWithMostPatients d ON a.doctor_id = d.doctor_id
             LIMIT 10;
             """,
-            # """SELECT first_name, last_name
-            # FROM Patients
-            # WHERE patient_id IN (
-            #     SELECT patient_id
-            #     FROM Appointments
-            #     GROUP BY patient_id, diagnosis
-            #     HAVING COUNT(appointment_id) >= 2
-            # );
-            # """,
+            """SELECT first_name, last_name
+            FROM Patients
+            WHERE patient_id IN (
+                SELECT patient_id
+                FROM Appointments
+                GROUP BY patient_id, diagnosis
+                HAVING COUNT(appointment_id) >= 2
+            );
+            """,
             """SELECT DISTINCT 
                 first_name, 
                 last_name
@@ -399,30 +399,30 @@ def test_database_performance():
                 ],
                 'projection': None
             },
-            {
-                'collection': 'Appointments',
-                'pipeline': [
-                    {'$group': {
-                        '_id': '$patient_id',
-                        'total_appointments': {'$sum': 1}
-                    }},
-                    {'$match': {'total_appointments': {'$gt': 7}}},
-                    {'$lookup': {
-                        'from': 'Patients',
-                        'localField': '_id',
-                        'foreignField': 'patient_id',
-                        'as': 'patient_info'
-                    }},
-                    {'$unwind': '$patient_info'},
-                    {'$project': {
-                        'first_name': '$patient_info.first_name',
-                        'last_name': '$patient_info.last_name',
-                        'total_appointments': 1
-                    }},
-                    {'$limit': 10}
-                ],
-                'projection': None
-            },
+            # {
+            #     'collection': 'Appointments',
+            #     'pipeline': [
+            #         {'$group': {
+            #             '_id': '$patient_id',
+            #             'total_appointments': {'$sum': 1}
+            #         }},
+            #         {'$match': {'total_appointments': {'$gt': 7}}},
+            #         {'$lookup': {
+            #             'from': 'Patients',
+            #             'localField': '_id',
+            #             'foreignField': 'patient_id',
+            #             'as': 'patient_info'
+            #         }},
+            #         {'$unwind': '$patient_info'},
+            #         {'$project': {
+            #             'first_name': '$patient_info.first_name',
+            #             'last_name': '$patient_info.last_name',
+            #             'total_appointments': 1
+            #         }},
+            #         {'$limit': 10}
+            #     ],
+            #     'projection': None
+            # },
             # podzapytania
             {
                 'collection': 'Appointments',
