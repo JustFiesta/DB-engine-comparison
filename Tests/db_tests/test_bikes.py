@@ -1,11 +1,11 @@
 """
-chuchujariport
+Moduł testujący dla bazy Bikes
 """
 
-from testing_functions import test_database_performance
+from Tests.db_tests.testing_functions import test_database_performance
 
 def main():
-    db_name = "Airports"
+    db_name = "Bikes"
     queries = {
         'MariaDB': [
             # zapytania

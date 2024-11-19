@@ -1,5 +1,5 @@
 """
-chuchuj funkcje
+Moduł zawierający funkcje testujące silniki baz danych
 """
 
 import time

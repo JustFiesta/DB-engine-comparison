@@ -1,11 +1,10 @@
 """
-chuchujariport
+Moduł testujący dla bazy Doctors_Appointments
 """
 
-from testing_functions import test_database_performance
+from Tests.db_tests.testing_functions import test_database_performance
 
 def main():
-    print("Testing Airports DB")
     db_name = "Airports"
     queries = {
         'MariaDB': [
