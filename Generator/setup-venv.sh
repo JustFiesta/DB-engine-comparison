@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
+#------------------
+# Script for setting up venv, installing and generating doctors appointments datasets
 
 # Sprawdzenie, czy Python jest zainstalowany
 if ! command -v python3 &> /dev/null; then
