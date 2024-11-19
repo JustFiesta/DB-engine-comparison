@@ -25,7 +25,7 @@ source .venv/bin/activate
 # Instalacja zależności
 echo "Instalacja zależności..."
 pip install --upgrade pip
-pip install faker pandas random
+pip install faker pandas random2
 
 # Sprawdzenie instalacji zależności
 if [ $? -eq 0 ]; then
@@ -37,7 +37,7 @@ fi
 
 # Uruchomienie skryptu Pythona
 echo "Uruchamianie skryptu do generowania danych..."
-python3 generate_data.py
+python3 ./*generator*.py
 
 # Dezaktywacja środowiska wirtualnego
 deactivate
