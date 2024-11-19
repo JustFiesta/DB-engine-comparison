@@ -10,8 +10,6 @@ Comparison of the MongoDB and MariaDB engines by performance
 
 3. Setup explanation - DONE
 
-4. compare usage of resources (CPU usg, RAM, time) - ????
+4. compare usage of resources (CPU usg, RAM, time) = excel export - ????
 
-5. create excel
-
-6. create doc
+5. create doc
