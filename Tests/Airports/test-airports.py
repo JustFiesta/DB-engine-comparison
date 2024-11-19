@@ -27,7 +27,7 @@ def test_mariadb_query(query):
     try:
         conn = mysql.connector.connect(
             host='localhost',
-            user='mariadb',
+            user='bot',
             password='P@ssw0rd',
             database='Airports'
         )
