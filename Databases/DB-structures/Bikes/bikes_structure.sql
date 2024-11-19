@@ -1,9 +1,9 @@
 --
 -- Baza rowery
 --
-CREATE DATABASE bikes;
+CREATE DATABASE Bikes;
 
-USE bikes;
+USE Bikes;
 
 CREATE TABLE Stations (
     station_id INT AUTO_INCREMENT PRIMARY KEY,
