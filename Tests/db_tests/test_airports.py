@@ -97,11 +97,6 @@ def main():
                     'collection': 'Flights',
                     'pipeline': [
                         {
-                            "$match": {
-                                "ARRIVAL_DELAY": { "$exists": true, "$ne": null }
-                            }
-                        },
-                        {
                             "$group": {
                                 "_id": "$DAY_OF_WEEK",  
                                 "avg_arrival_delay": { "$avg": "$ARRIVAL_DELAY" }
@@ -115,7 +110,7 @@ def main():
                         {
                             "$match": {
                                 "CANCELLED": 1,
-                                "CANCELLATION_REASON": { "$exists": true, "$ne": null }
+                                "CANCELLATION_REASON": { "$exists": True }
                             }
                         },
                         {
@@ -132,9 +127,9 @@ def main():
                                                 {
                             "$match": {
                                 "AIRLINE": "UA",
-                                "YEAR": { "$exists": true },
-                                "MONTH": { "$exists": true },
-                                "DAY": { "$exists": true }
+                                "YEAR": { "$exists": True },
+                                "MONTH": { "$exists": True },
+                                "DAY": { "$exists": True }
                             }
                         },
                         {
@@ -345,7 +340,7 @@ def main():
                                 "totalAvgDelay": [
                                     {
                                         "$group": {
-                                            "_id": null,
+                                            "_id": 1,
                                             "avg": { "$avg": "$ARRIVAL_DELAY" }
                                         }
                                     }
@@ -390,7 +385,7 @@ def main():
                         },
                         {
                             "$project": {
-                                "_id": 0,
+                                "_id": "$results._id",
                                 "airlineName": "$results.airline_info.AIRLINE",
                                 "avgDelay": { "$round": ["$results.avgDelay", 2] }
                             }
@@ -398,7 +393,7 @@ def main():
                         {
                             "$sort": { "avgDelay": -1 }
                         }
-                    ]
+                    ],
                 },
                 {
                     'collection': 'Flights',
