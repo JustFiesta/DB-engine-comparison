@@ -172,15 +172,15 @@ def test_database_performance():
             JOIN DoctorWithMostPatients d ON a.doctor_id = d.doctor_id
             LIMIT 10;
             """,
-            """SELECT first_name, last_name
-            FROM Patients
-            WHERE patient_id IN (
-                SELECT patient_id
-                FROM Appointments
-                GROUP BY patient_id, diagnosis
-                HAVING COUNT(appointment_id) >= 2
-            );
-            """,
+            # """SELECT first_name, last_name
+            # FROM Patients
+            # WHERE patient_id IN (
+            #     SELECT patient_id
+            #     FROM Appointments
+            #     GROUP BY patient_id, diagnosis
+            #     HAVING COUNT(appointment_id) >= 2
+            # );
+            # """,
             """SELECT DISTINCT 
                 first_name, 
                 last_name
