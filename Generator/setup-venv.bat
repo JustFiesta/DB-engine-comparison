@@ -25,7 +25,7 @@ call .venv\Scripts\activate.bat
 :: Instalacja zależności
 echo Instalacja zależności...
 pip install --upgrade pip
-pip install faker pandas random
+pip install faker pandas
 
 :: Sprawdzenie instalacji zależności
 if %errorlevel% neq 0 (

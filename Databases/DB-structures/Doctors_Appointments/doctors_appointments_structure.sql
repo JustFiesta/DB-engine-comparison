@@ -63,9 +63,6 @@ CREATE TABLE Appointments (
     INDEX idx_appointment_date (appointment_date),
     INDEX idx_appointment_status (appointment_status),
     
-    -- Dodajemy ograniczenie na datę wizyty (nie może być w przeszłości)
-    CHECK (appointment_date >= CURRENT_TIMESTAMP),
-    
     -- Dodajemy ograniczenie uniemożliwiające duplikaty wizyt
     UNIQUE INDEX idx_doctor_patient_date (doctor_id, patient_id, appointment_date)
 );
