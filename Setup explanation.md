@@ -1,7 +1,11 @@
 # Infrastructure
 
-We made an VM using VirtualBox using Ubuntu 22.04 server.
+We made an VM using AWS using Ubuntu 24.04 server.
 
-VM is brigged to Host NIC.
+VM has public IP, so public access is enabled.
 
-There using setup scripts whole enviroment is created, datasets generated and manually fed to databases.
+Configuration is made via bootstrap script, then datasets are fed to VM via scp.
+
+Next the datrasets are loaded into databases.
+
+Testing script is uses to run and output result into file.
