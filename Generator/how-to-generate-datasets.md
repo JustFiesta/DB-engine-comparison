@@ -10,6 +10,7 @@ This is explanation of datasets preparation for test purposes.
 4. Wait for script to finish its work
 
 Note:
+
 * doctors - 1000000
 * pacients - 2500000
 * appointments - 6500000
