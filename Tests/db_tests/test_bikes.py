@@ -2,7 +2,7 @@
 Moduł testujący dla bazy Bikes
 """
 
-from Tests.db_tests.testing_functions import test_database_performance
+from testing_functions import test_database_performance
 
 def main():
     db_name = "Bikes"

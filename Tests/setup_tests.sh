@@ -40,7 +40,7 @@ fi
 
 # Wyszukanie i uruchomienie trzech skryptów testowych Python
 echo "Wyszukiwanie testów Python w bieżącym katalogu..."
-test_files=( $(find . -type f -name "test_*.py" | sort | grep -v "$(basename "$0")") )
+test_files=( $(find . -maxdepth 2 -type f -name "test_*.py" | sort | grep -v "$(basename "$0")") )
 
 if [ ${#test_files[@]} -eq 0 ]; then
     echo "Nie znaleziono żadnych skryptów testowych w bieżącym katalogu."
