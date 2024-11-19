@@ -9,7 +9,7 @@ def main():
     queries = {
         'MariaDB': [
             # zapytania
-            "SELECT * FROM Flights WHERE ARRIVAL_DELAY > 60;",
+            "SELECT FLIGHT_ID, FLIGHT_NUMBER, ARRIVAL_DELAY FROM Flights WHERE ARRIVAL_DELAY > 60;",
             "SELECT AIRLINE FROM Airlines WHERE IATA_CODE = 'AA';",
             "SELECT AIRPORT, CITY FROM Airports WHERE STATE = 'CA';",
             # grupowanie
@@ -80,39 +80,42 @@ def main():
                 {
                     'collection': 'Flights',
                     'query': {"ARRIVAL_DELAY": {"$gt": 60}},
-                    'projection': None
+                    'projection': {"_id": 0, "FLIGHT_NUMBER": 1, "ARRIVAL_DELAY": 1}
                 },
                 {
                     'collection': 'Airlines',
                     'query': {"IATA_CODE": "AA"},
-                    'projection': None
+                    'projection': {"_id": 0, "AIRLINE": 1}
                 },
-                { 
+                {
                     'collection': 'Airports',
                     'query': { "STATE": "CA" },
-                    'projection': None  
+                    'projection': {"_id": 0, "AIRPORT": 1, "CITY": 1}
                 },
                 # grupowanie
                 {
                     'collection': 'Flights',
-                    'query': None,
                     'pipeline': [
+                        {
+                            "$match": {
+                                "ARRIVAL_DELAY": { "$exists": true, "$ne": null }
+                            }
+                        },
                         {
                             "$group": {
                                 "_id": "$DAY_OF_WEEK",  
                                 "avg_arrival_delay": { "$avg": "$ARRIVAL_DELAY" }
                             }
                         }
-                    ],
-                    'projection': None
+                    ]
                 },
                 {
                     'collection': 'Flights',
-                    'query': None,
                     'pipeline': [
                         {
                             "$match": {
-                                "CANCELLED": 1  
+                                "CANCELLED": 1,
+                                "CANCELLATION_REASON": { "$exists": true, "$ne": null }
                             }
                         },
                         {
@@ -121,16 +124,17 @@ def main():
                                 "cancel_count": { "$sum": 1 }  
                             }
                         }
-                    ],
-                    'projection': None
+                    ]
                 },
                 {
                     'collection': 'Flights',
-                    'query': None,
                     'pipeline': [
-                        {
+                                                {
                             "$match": {
-                                "AIRLINE": "UA"  
+                                "AIRLINE": "UA",
+                                "YEAR": { "$exists": true },
+                                "MONTH": { "$exists": true },
+                                "DAY": { "$exists": true }
                             }
                         },
                         {
@@ -149,7 +153,6 @@ def main():
                 # joiny
                 {
                     'collection': 'Flights',
-                    'query': None,
                     'pipeline': [
                         {
                             "$group": {
@@ -162,13 +165,15 @@ def main():
                                 "from": "Airlines",
                                 "localField": "_id",
                                 "foreignField": "IATA_CODE",
-                                "as": "airline_info"
+                                "as": "airline_info",
+                                "pipeline": [
+                                    { "$project": { "AIRLINE": 1, "_id": 0 } }
+                                ]
                             }
                         },
                         {
-                            "$unwind": {
-                                "path": "$airline_info",
-                                "preserveNullAndEmptyArrays": True
+                            "$set": {
+                                "airline_info": { "$arrayElemAt": ["$airline_info", 0] }
                             }
                         },
                         {
@@ -178,12 +183,10 @@ def main():
                                 "_id": 0
                             }
                         }
-                    ],
-                    'projection': None
+                    ]
                 },
                 {
                     'collection': 'Flights',
-                    'query': None,
                     'pipeline': [
                         {
                             "$match": {
@@ -195,33 +198,48 @@ def main():
                                 "from": "Airlines",
                                 "localField": "AIRLINE",
                                 "foreignField": "IATA_CODE",
-                                "as": "airline_info"
+                                "as": "airline_info",
+                                "pipeline": [
+                                    { "$project": { "AIRLINE": 1, "_id": 0 } }
+                                ]
                             }
                         },
                         {
-                            "$unwind": "$airline_info"
+                            "$set": {
+                                "airline_info": { "$arrayElemAt": ["$airline_info", 0] }
+                            }
                         },
                         {
                             "$lookup": {
                                 "from": "Airports",
                                 "localField": "ORIGIN_AIRPORT",
                                 "foreignField": "IATA_CODE",
-                                "as": "origin_airport"
+                                "as": "origin_airport",
+                                "pipeline": [
+                                    { "$project": { "AIRPORT": 1, "_id": 0 } }
+                                ]
                             }
                         },
                         {
-                            "$unwind": "$origin_airport"
+                            "$set": {
+                                "origin_airport": { "$arrayElemAt": ["$origin_airport", 0] }
+                            }
                         },
                         {
                             "$lookup": {
                                 "from": "Airports",
                                 "localField": "DESTINATION_AIRPORT",
                                 "foreignField": "IATA_CODE",
-                                "as": "destination_airport"
+                                "as": "destination_airport",
+                                "pipeline": [
+                                    { "$project": { "AIRPORT": 1, "_id": 0 } }
+                                ]
                             }
                         },
                         {
-                            "$unwind": "$destination_airport"
+                            "$set": {
+                                "destination_airport": { "$arrayElemAt": ["$destination_airport", 0] }
+                            }
                         },
                         {
                             "$project": {
@@ -235,12 +253,10 @@ def main():
                         {
                             "$sort": {"arrival_delay": -1}
                         }
-                    ],
-                    'projection': None
+                    ]
                 },
                 {
                     'collection': 'Flights',
-                    'query': None,
                     'pipeline': [
                         {
                             "$match": {
@@ -252,33 +268,48 @@ def main():
                                 "from": "Airlines",
                                 "localField": "AIRLINE",
                                 "foreignField": "IATA_CODE",
-                                "as": "airline_info"
+                                "as": "airline_info",
+                                "pipeline": [
+                                    { "$project": { "AIRLINE": 1, "_id": 0 } }
+                                ]
                             }
                         },
                         {
-                            "$unwind": "$airline_info"
+                            "$set": {
+                                "airline_info": { "$arrayElemAt": ["$airline_info", 0] }
+                            }
                         },
                         {
                             "$lookup": {
                                 "from": "Airports",
                                 "localField": "ORIGIN_AIRPORT",
                                 "foreignField": "IATA_CODE",
-                                "as": "origin_airport"
+                                "as": "origin_airport",
+                                "pipeline": [
+                                    { "$project": { "AIRPORT": 1, "_id": 0 } }
+                                ]
                             }
                         },
                         {
-                            "$unwind": "$origin_airport"
+                            "$set": {
+                                "origin_airport": { "$arrayElemAt": ["$origin_airport", 0] }
+                            }
                         },
                         {
                             "$lookup": {
                                 "from": "Airports",
                                 "localField": "DESTINATION_AIRPORT",
                                 "foreignField": "IATA_CODE",
-                                "as": "destination_airport"
+                                "as": "destination_airport",
+                                "pipeline": [
+                                    { "$project": { "AIRPORT": 1, "_id": 0 } }
+                                ]
                             }
                         },
                         {
-                            "$unwind": "$destination_airport"
+                            "$set": {
+                                "destination_airport": { "$arrayElemAt": ["$destination_airport", 0] }
+                            }
                         },
                         {
                             "$project": {
@@ -292,13 +323,11 @@ def main():
                         {
                             "$sort": {"arrival_delay": -1}
                         }
-                    ],
-                    'projection': None
+                    ]
                 },
                 # podzapytania
                 {
                     'collection': 'Flights',
-                    'query': None,
                     'pipeline': [
                         {
                             "$group": {
@@ -310,14 +339,13 @@ def main():
                 },
                 {
                     'collection': 'Flights',
-                    'query': None,
                     'pipeline': [
                         {
                             "$facet": {
                                 "totalAvgDelay": [
                                     {
                                         "$group": {
-                                            "_id": 1,
+                                            "_id": null,
                                             "avg": { "$avg": "$ARRIVAL_DELAY" }
                                         }
                                     }
@@ -362,7 +390,7 @@ def main():
                         },
                         {
                             "$project": {
-                                "_id": "$results._id",
+                                "_id": 0,
                                 "airlineName": "$results.airline_info.AIRLINE",
                                 "avgDelay": { "$round": ["$results.avgDelay", 2] }
                             }
@@ -370,16 +398,14 @@ def main():
                         {
                             "$sort": { "avgDelay": -1 }
                         }
-                    ],
-                    'projection': None
+                    ]
                 },
                 {
                     'collection': 'Flights',
-                    'query': None,
                     'pipeline': [
                         {
                             "$match": {
-                                "ARRIVAL_DELAY": {"$gt": 0}  
+                                "ARRIVAL_DELAY": { "$gt": 0 }
                             }
                         },
                         {
@@ -388,13 +414,13 @@ def main():
                                     "month": "$MONTH",
                                     "airline": "$AIRLINE"
                                 },
-                                "delayed_flights": {"$sum": 1}
+                                "delayed_flights": { "$sum": 1 }
                             }
                         },
                         {
                             "$group": {
                                 "_id": "$_id.month",
-                                "maxDelays": {"$max": "$delayed_flights"},
+                                "maxDelays": { "$max": "$delayed_flights" },
                                 "allData": {
                                     "$push": {
                                         "airline": "$_id.airline",
@@ -409,12 +435,14 @@ def main():
                                     "$filter": {
                                         "input": "$allData",
                                         "as": "item",
-                                        "cond": {"$eq": ["$$item.delayed_flights", "$maxDelays"]}
+                                        "cond": { "$eq": ["$$item.delayed_flights", "$maxDelays"] }
                                     }
                                 }
                             }
                         },
-                        {"$unwind": "$airline_data"},
+                        {
+                            "$unwind": "$airline_data"
+                        },
                         {
                             "$lookup": {
                                 "from": "Airlines",
@@ -423,7 +451,9 @@ def main():
                                 "as": "airline_info"
                             }
                         },
-                        {"$unwind": "$airline_info"},
+                        {
+                            "$unwind": "$airline_info"
+                        },
                         {
                             "$project": {
                                 "_id": 0,
@@ -432,9 +462,10 @@ def main():
                                 "delayed_flights": "$airline_data.delayed_flights"
                             }
                         },
-                        {"$sort": {"month": 1}}
-                    ],
-                    'projection': None
+                        {
+                            "$sort": { "month": 1 }
+                        }
+                    ]
                 },
             ]
     }
