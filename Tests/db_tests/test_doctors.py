@@ -390,6 +390,9 @@ def main():
                             'first_name': '$patient_info.first_name',
                             'last_name': '$patient_info.last_name'
                         }
+                    },
+                    {
+                        '$limit': 10
                     }
                 ]
             },
