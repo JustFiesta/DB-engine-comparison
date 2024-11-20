@@ -406,7 +406,7 @@ def main():
                     },
                     {
                         '$match': {
-                            'doctor.specialization': 'Cardiology'
+                            'doctor.specialization': 'Cardiology' 
                         }
                     },
                     {
@@ -418,25 +418,19 @@ def main():
                         }
                     },
                     {
-                        '$unwind': '$patient'
-                    },
-                    {
-                        '$group': {
-                            '_id': {
-                                'first_name': '$patient.first_name',
-                                'last_name': '$patient.last_name'
-                            }
+                        '$project': {
+                            'patient': { '$arrayElemAt': ['$patient', 0] },  
+                            '_id': 0  
                         }
                     },
                     {
                         '$project': {
-                            '_id': 0,
-                            'first_name': '$_id.first_name',
-                            'last_name': '$_id.last_name'
+                            'first_name': '$patient.first_name',
+                            'last_name': '$patient.last_name'
                         }
                     },
                     {
-                        '$limit': 10
+                        '$limit': 10  
                     }
                 ]
             },

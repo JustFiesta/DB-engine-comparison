@@ -184,7 +184,6 @@ def main():
             },
             {
                 'collection': 'TripUsers',
-                'query': None,
                 'pipeline': [
                     {
                         '$match': {
@@ -219,7 +218,6 @@ def main():
             },
             {
                 'collection': 'TripUsers',
-                'query': None,
                 'pipeline': [
                     {
                         '$lookup': {
@@ -252,7 +250,6 @@ def main():
             # podzapytania
             {
                 'collection': 'TripUsers',
-                'query': None,
                 'pipeline': [
                     {
                         '$facet': {
@@ -299,12 +296,16 @@ def main():
             },
             {
                 'collection': 'Stations',  
-                'query': None,
                 'pipeline': [
                     {
                         '$lookup': {
                             'from': 'TripUsers',
                             'pipeline': [
+                                {
+                                    '$match': {  
+                                        'tripduration': { '$gt': 0 }
+                                    }
+                                },
                                 {
                                     '$group': {
                                         '_id': None,
