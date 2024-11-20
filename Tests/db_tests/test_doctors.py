@@ -393,47 +393,6 @@ def main():
                     }
                 ]
             },
-            {
-                'collection': 'Appointments',
-                'pipeline': [
-                    {
-                        '$lookup': {
-                            'from': 'Doctors',
-                            'localField': 'doctor_id',
-                            'foreignField': 'doctor_id',
-                            'as': 'doctor'
-                        }
-                    },
-                    {
-                        '$match': {
-                            'doctor.specialization': 'Cardiology' 
-                        }
-                    },
-                    {
-                        '$lookup': {
-                            'from': 'Patients',
-                            'localField': 'patient_id',
-                            'foreignField': 'patient_id',
-                            'as': 'patient'
-                        }
-                    },
-                    {
-                        '$project': {
-                            'patient': { '$arrayElemAt': ['$patient', 0] },  
-                            '_id': 0  
-                        }
-                    },
-                    {
-                        '$project': {
-                            'first_name': '$patient.first_name',
-                            'last_name': '$patient.last_name'
-                        }
-                    },
-                    {
-                        '$limit': 10  
-                    }
-                ]
-            },
         ]
     }
 

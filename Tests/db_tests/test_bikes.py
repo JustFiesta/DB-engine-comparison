@@ -253,7 +253,12 @@ def main():
                 'pipeline': [
                     {
                         '$facet': {
-                            'avgDuration': [
+                            'avgDurationYoung': [
+                                {
+                                    '$match': {
+                                        'birth_year': {'$lt': 1980}
+                                    }
+                                },
                                 {
                                     '$group': {
                                         '_id': None,
@@ -261,76 +266,37 @@ def main():
                                     }
                                 }
                             ],
-                            'allTrips': [
+                            'allTripsYoung': [
                                 {
-                                    '$match': {}  
+                                    '$match': {
+                                        'birth_year': {'$lt': 1980}
+                                    }
                                 }
                             ]
                         }
                     },
                     {
-                        '$unwind': '$avgDuration'
+                        '$unwind': '$avgDurationYoung'
                     },
                     {
-                        '$unwind': '$allTrips'
+                        '$unwind': '$allTripsYoung'
                     },
                     {
                         '$match': {
                             '$expr': {
-                                '$gt': ['$allTrips.tripduration', '$avgDuration.avg_tripduration']
+                                '$gt': ['$allTripsYoung.tripduration', '$avgDurationYoung.avg_tripduration']
                             }
                         }
                     },
                     {
-                        '$replaceRoot': { 'newRoot': '$allTrips' }
+                        '$replaceRoot': { 'newRoot': '$allTripsYoung' }
                     },
                     {
                         '$project': {
                             '_id': 0,
                             'trip_id': 1,
                             'tripduration': 1,
-                            'starttime': 1
-                        }
-                    }
-                ]
-            },
-            {
-                'collection': 'Stations',  
-                'pipeline': [
-                    {
-                        '$lookup': {
-                            'from': 'TripUsers',
-                            'pipeline': [
-                                {
-                                    '$match': {  
-                                        'tripduration': { '$gt': 0 }
-                                    }
-                                },
-                                {
-                                    '$group': {
-                                        '_id': None,
-                                        'unique_end_stations': {'$addToSet': '$end_station_id'}
-                                    }
-                                }
-                            ],
-                            'as': 'end_stations_info'
-                        }
-                    },
-                    {
-                        '$unwind': '$end_stations_info'
-                    },
-                    {
-                        '$match': {
-                            '$expr': {
-                                '$in': ['$station_id', '$end_stations_info.unique_end_stations']
-                            }
-                        }
-                    },
-                    {
-                        '$project': {
-                            '_id': 0,
-                            'station_id': 1,
-                            'station_name': 1
+                            'birth_year': 1
                         }
                     }
                 ]
