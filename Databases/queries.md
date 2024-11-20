@@ -25,9 +25,7 @@ MongoDB:
     }
   ```
 
-
-
-Returns the name of the airline with the IATA code 'AA'.    
+Returns the name of the airline with the IATA code 'AA'.
 
 MariaDB:
 
@@ -46,8 +44,6 @@ MongoDB:
         'projection': {"_id": 0, "AIRLINE": 1}
     }
   ```
-
-
 
 Displays the names of airports and their corresponding cities in California (state code 'CA').
 
@@ -97,8 +93,6 @@ MongoDB:
     },
   ```
 
-
-
 Displays the number of canceled flights, grouped by cancellation reason.
 
 MariaDB:
@@ -131,8 +125,6 @@ MongoDB:
         ]
     },
   ```
-
-
 
 Shows the number of flights operated by airline UA (United Airlines) for each day.
 
@@ -171,9 +163,7 @@ MongoDB:
             }
         ]
     },
-  ```    
-
-
+  ```
 
 3. Join
 
@@ -226,8 +216,6 @@ MongoDB:
         ]
     },
   ```
-
-
 
 Lists flights with delays greater than 100 minutes, including the airline name, origin airport, destination airport, and delay time. Results are sorted by delay in descending order.
 
@@ -322,8 +310,6 @@ MongoDB:
     }
   ```
 
-
-
 Displays destination airports and airline names for flights delayed by more than 120 minutes.
 
 MariaDB:
@@ -411,8 +397,6 @@ MongoDB:
     }
   ```
 
-
-
 4. Subqueries
 
 Lists airlines with their average delay times, where the delay exceeds the global average delay.
@@ -449,8 +433,6 @@ MongoDB:
         ]
     }
   ```
-
-
 
 Lists unique airports (including their city and state) that serve flights traveling longer than the average distance.
 
@@ -537,8 +519,6 @@ MongoDB:
         ],
     }
   ```
-
-
 
 For each month, displays the airline with the highest number of delayed flights.
 
@@ -659,7 +639,6 @@ MongoDB:
     }
   ```
 
-
 Retrieves all records of trips that end at the station named 'Newport Pkwy'.
 
 MariaDB:
@@ -677,7 +656,6 @@ MongoDB:
         'projection': None
     }
   ```
-
 
 Displays the unique types of users (e.g., subscriber, customer) in the TripUsers table.
 
@@ -779,7 +757,6 @@ MongoDB:
     }   
   ```
 
-
  Groups the records by gender and calculates the average trip duration for each gender.
 
 MariaDB:
@@ -820,7 +797,6 @@ MongoDB:
         ]
     }
   ```
-
 
 3. Join
 
@@ -886,7 +862,6 @@ MongoDB:
     }
   ```
 
-
 Similar to the previous query, but uses aliases for the Stations table for start and end stations.
 
 MariaDB:
@@ -939,7 +914,6 @@ MongoDB:
     }
   ```
 
-
 Retrieves detailed trip information, including start and end station names, by joining the TripUsers table with the Stations table.
 
 MariaDB:
@@ -987,7 +961,6 @@ MongoDB:
         ]
     },
   ```
-
 
 4. Subqueries
 
@@ -1065,8 +1038,7 @@ MongoDB:
     }
   ```
 
-
- Retrieves trips for users born before 1980, where the trip duration is longer than the average duration for this group.
+Retrieves trips for users born before 1980, where the trip duration is longer than the average duration for this group.
 
 MariaDB:
 
@@ -1134,7 +1106,6 @@ MongoDB:
     }
   ```
 
-
 ## Database Doctors_Appointments
 
 1. Simple queries
@@ -1157,7 +1128,6 @@ MongoDB:
     }
   ```
 
-
 Retrieves all records of patients who were born before January 1, 1980.
 
 MariaDB:
@@ -1175,7 +1145,6 @@ MongoDB:
         'projection': None
     }
   ```
-
 
 Retrieves all appointments from the Appointments table where the diagnosis is 'Hypertension'.
 
@@ -1258,7 +1227,6 @@ MongoDB:
     }
   ```
 
-
 Groups the records by patient ID and counts the number of distinct doctors that have treated each patient, returning only patients who have seen more than one doctor.
 
 MariaDB:
@@ -1332,7 +1300,6 @@ MongoDB:
         ]
     }
   ```
-
 
 3. Join
 
@@ -1416,7 +1383,6 @@ MongoDB:
     }
   ```
 
-
 Retrieves details of the most recent 10 appointments, including doctor and patient names and the diagnosis.
 
 MariaDB:
@@ -1480,7 +1446,6 @@ MongoDB:
     }
   ```
 
-
 Retrieves the details of patients who have had more than 7 appointments, showing the patient's name and total number of appointments.
 
 MariaDB:
@@ -1536,7 +1501,6 @@ MongoDB:
         ]
     }
   ```
-
 
 4. Subqueries
 
@@ -1638,7 +1602,6 @@ MongoDB:
     }
   ```
 
-
 Retrieves the names of patients who have had at least 2 appointments for the same diagnosis.
 
 MariaDB:
@@ -1699,7 +1662,6 @@ MongoDB:
     }
   ```
 
-
 Retrieves the names of patients who have been treated by cardiologists, limiting the results to the first 10 patients
 
 MariaDB:
@@ -1717,8 +1679,3 @@ MariaDB:
     )
     LIMIT 10;
   ```
-
-MongoDB:
-
-  ```shell
-  ```  
