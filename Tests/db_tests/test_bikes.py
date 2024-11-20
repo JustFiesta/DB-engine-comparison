@@ -52,7 +52,6 @@ def main():
             },
             { 
                 'collection': 'TripUsers',
-                'query': None,
                 'pipeline': [
                     {
                         "$group": {"_id": "$usertype"}
@@ -60,13 +59,11 @@ def main():
                     {
                         "$project": {"usertype": "$_id", "_id": 0}
                     }  
-                ],
-                'projection': None
+                ]
             },
             # grupowanie
             {
                 'collection': 'TripUsers',
-                'query': None,
                 'pipeline': [
                     {
                         "$group": {
@@ -84,12 +81,10 @@ def main():
                     {
                         "$sort": {"usertype": 1} 
                     }
-                ],
-                'projection': None
+                ]
             },
             {
                 'collection': 'TripUsers',
-                'query': None,
                 'pipeline': [
                     {
                         "$group": {
@@ -112,12 +107,10 @@ def main():
                             "birth_year": {"$ne": None}
                         }
                     }
-                ],
-                'projection': None
+                ]
             },
             {
                 'collection': 'TripUsers',
-                'query': None,
                 'pipeline': [
                     {
                         "$group": {
@@ -142,13 +135,11 @@ def main():
                             "gender": {"$ne": None}
                         }
                     }
-                ],
-                'projection': None
+                ]
             },
             # joiny
             {
                 'collection': 'TripUsers',
-                'query': None,
                 'pipeline': [
                     {
                         "$match": {
@@ -189,8 +180,7 @@ def main():
                     {
                         "$sort": {"trip_id": 1}
                     },
-                ],
-                'projection': None
+                ]
             },
             {
                 'collection': 'TripUsers',
@@ -225,8 +215,7 @@ def main():
                             'end_station_name': {'$arrayElemAt': ['$end_station.station_name', 0]}
                         }
                     }
-                ],
-                'projection': None
+                ]
             },
             {
                 'collection': 'TripUsers',
@@ -258,8 +247,7 @@ def main():
                         }
                     }
                     
-                ],
-                'projection': None
+                ]
             },
             # podzapytania
             {
@@ -307,8 +295,7 @@ def main():
                             'starttime': 1
                         }
                     }
-                ],
-                'projection': None
+                ]
             },
             {
                 'collection': 'Stations',  
@@ -345,63 +332,53 @@ def main():
                             'station_name': 1
                         }
                     }
-                ],
-                'projection': None
+                ]
             },
             {
-                'collection': 'TripUsers',
-                'query': None,
+                'collection': 'Stations',
                 'pipeline': [
                     {
-                        '$facet': {
-                            'avgDurationYoung': [
-                                {
-                                    '$match': {
-                                        'birth_year': {'$lt': 1980}
-                                    }
-                                },
+                        '$lookup': {
+                            'from': 'TripUsers',
+                            'pipeline': [
                                 {
                                     '$group': {
                                         '_id': None,
-                                        'avg_tripduration': {'$avg': '$tripduration'}
+                                        'unique_end_stations': {'$addToSet': '$end_station_id'}
+                                    }
+                                },
+                                {
+                                    '$project': {
+                                        '_id': 0,
+                                        'unique_end_stations': 1
                                     }
                                 }
                             ],
-                            'allTripsYoung': [
-                                {
-                                    '$match': {
-                                        'birth_year': {'$lt': 1980}
-                                    }
-                                }
-                            ]
+                            'as': 'end_stations_info'
                         }
                     },
                     {
-                        '$unwind': '$avgDurationYoung'
-                    },
-                    {
-                        '$unwind': '$allTripsYoung'
-                    },
-                    {
-                        '$match': {
-                            '$expr': {
-                                '$gt': ['$allTripsYoung.tripduration', '$avgDurationYoung.avg_tripduration']
+                        '$set': {
+                            'end_stations_list': {
+                                '$arrayElemAt': ['$end_stations_info.unique_end_stations', 0]
                             }
                         }
                     },
                     {
-                        '$replaceRoot': { 'newRoot': '$allTripsYoung' }
+                        '$match': {
+                            '$expr': {
+                                '$in': ['$station_id', '$end_stations_list']
+                            }
+                        }
                     },
                     {
                         '$project': {
                             '_id': 0,
-                            'trip_id': 1,
-                            'tripduration': 1,
-                            'birth_year': 1
+                            'station_id': 1,
+                            'station_name': 1
                         }
                     }
-                ],
-                'projection': None
+                ]
             },
         ]
     }

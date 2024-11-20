@@ -6,10 +6,10 @@ CREATE DATABASE Bikes;
 USE Bikes;
 
 CREATE TABLE Stations (
-    station_id INT AUTO_INCREMENT PRIMARY KEY,
+    station_id INT PRIMARY KEY,
     station_name VARCHAR(255),
-    latitude DECIMAL(10, 8),
-    longitude DECIMAL(11, 8)
+    latitude DECIMAL(12, 9),
+    longitude DECIMAL(12, 9)
 );
 
 CREATE TABLE TripUsers (
@@ -17,7 +17,9 @@ CREATE TABLE TripUsers (
     tripduration INT,
     starttime DATETIME,
     stoptime DATETIME,
+    start_station_id INT,
     start_station_name VARCHAR(255),
+    end_station_id INT,
     end_station_name VARCHAR(255),
     bikeid INT,
     birth_year INT NULL,
