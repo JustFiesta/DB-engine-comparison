@@ -262,98 +262,147 @@ def main():
             {
                 'collection': 'Appointments',
                 'pipeline': [
-                    {'$lookup': {
-                        'from': 'Doctors',
-                        'localField': 'doctor_id',
-                        'foreignField': 'doctor_id',
-                        'as': 'doctor'
-                    }},
-                    {'$lookup': {
-                        'from': 'Patients',
-                        'localField': 'patient_id',
-                        'foreignField': 'patient_id',
-                        'as': 'patient'
-                    }},
-                    {'$unwind': '$doctor'},
-                    {'$unwind': '$patient'},
-                    {'$project': {
-                        'appointment_date': 1,
-                        'doctor_first_name': '$doctor.first_name',
-                        'doctor_last_name': '$doctor.last_name',
-                        'patient_first_name': '$patient.first_name',
-                        'patient_last_name': '$patient.last_name',
-                        'diagnosis': 1
-                    }},
-                    {'$limit': 10}
+                    {
+                        '$lookup': {
+                            'from': 'Doctors',
+                            'localField': 'doctor_id',
+                            'foreignField': 'doctor_id',
+                            'as': 'doctor'
+                        }
+                    },
+                    {
+                        '$lookup': {
+                            'from': 'Patients',
+                            'localField': 'patient_id',
+                            'foreignField': 'patient_id',
+                            'as': 'patient'
+                        }
+                    },
+                    {
+                        '$unwind': '$doctor'
+                    },
+                    {
+                        '$unwind': '$patient'
+                    },
+                    {
+                        '$project': {
+                            'appointment_date': 1,
+                            'doctor_first_name': '$doctor.first_name',
+                            'doctor_last_name': '$doctor.last_name',
+                            'patient_first_name': '$patient.first_name',
+                            'patient_last_name': '$patient.last_name',
+                            'diagnosis': 1
+                        }
+                    },
+                    {
+                        '$limit': 10
+                    }
                 ]
             },
             {
                 'collection': 'Appointments',
                 'pipeline': [
-                    {'$group': {
-                        '_id': '$patient_id',
-                        'total_appointments': {'$sum': 1}
-                    }},
-                    {'$match': {'total_appointments': {'$gt': 5}}},
-                    {'$lookup': {
-                        'from': 'Patients',
-                        'localField': '_id',
-                        'foreignField': 'patient_id',
-                        'as': 'patient_info'
-                    }},
-                    {'$unwind': '$patient_info'},
-                    {'$project': {
-                        'first_name': '$patient_info.first_name',
-                        'last_name': '$patient_info.last_name',
-                        'total_appointments': 1
-                    }},
-                    {'$limit': 10}
+                    {
+                        '$group': {
+                            '_id': '$patient_id',
+                            'total_appointments': {'$sum': 1}
+                        }
+                    },
+                    {
+                        '$match': {'total_appointments': {'$gt': 5}}
+                    },
+                    {
+                        '$lookup': {
+                            'from': 'Patients',
+                            'localField': '_id',
+                            'foreignField': 'patient_id',
+                            'as': 'patient_info'
+                        }
+                    },
+                    {
+                        '$unwind': '$patient_info'
+                    },
+                    {
+                        '$project': {
+                            'first_name': '$patient_info.first_name',
+                            'last_name': '$patient_info.last_name',
+                            'total_appointments': 1
+                        }
+                    },
+                    {
+                        '$limit': 10
+                    }
                 ]
             },
             # podzapytania
             {
                 'collection': 'Appointments',
                 'pipeline': [
-                    {'$group': {
-                        '_id': '$doctor_id',
-                        'patient_count': {'$sum': 1}
-                    }},
-                    {'$sort': {'patient_count': -1}},
-                    {'$limit': 1},
-                    {'$lookup': {
-                        'from': 'Appointments',
-                        'let': {'doctor_id': '$_id'},
-                        'pipeline': [
-                            {'$match': {
-                                '$expr': {'$eq': ['$doctor_id', '$$doctor_id']}
-                            }},
-                            {'$lookup': {
-                                'from': 'Patients',
-                                'localField': 'patient_id',
-                                'foreignField': 'patient_id',
-                                'as': 'patient'
-                            }},
-                            {'$unwind': '$patient'},
-                            {'$group': {
-                                '_id': {
-                                    'patient_id': '$patient_id',
-                                    'first_name': '$patient.first_name',
-                                    'last_name': '$patient.last_name'
+                    {
+                        '$group': {
+                            '_id': '$doctor_id',
+                            'patient_count': {'$sum': 1}
+                        }
+                    },
+                    {
+                        '$sort': {'patient_count': -1}
+                    },
+                    {
+                        '$limit': 1
+                    },
+                    {
+                        '$lookup': {
+                            'from': 'Appointments',
+                            'let': {'doctor_id': '$_id'},
+                            'pipeline': [
+                                {
+                                    '$match': {
+                                        '$expr': {'$eq': ['$doctor_id', '$$doctor_id']}
+                                    }
+                                },
+                                {
+                                    '$lookup': {
+                                        'from': 'Patients',
+                                        'localField': 'patient_id',
+                                        'foreignField': 'patient_id',
+                                        'as': 'patient'
+                                    }
+                                },
+                                {
+                                    '$unwind': '$patient'
+                                },
+                                {
+                                    '$group': {
+                                        '_id': {
+                                            'patient_id': '$patient_id',
+                                            'first_name': '$patient.first_name',
+                                            'last_name': '$patient.last_name'
+                                        }
+                                    }
+                                },
+                                {
+                                    '$project': {
+                                        'first_name': '$_id.first_name',
+                                        'last_name': '$_id.last_name',
+                                        '_id': 0
+                                    }
+                                },
+                                {
+                                    '$limit': 10
                                 }
-                            }},
-                            {'$project': {
-                                'first_name': '$_id.first_name',
-                                'last_name': '$_id.last_name',
-                                '_id': 0
-                            }},
-                            {'$limit': 10}
-                        ],
-                        'as': 'patients'
-                    }},
-                    {'$unwind': '$patients'},
-                    {'$replaceRoot': {'newRoot': '$patients'}
-                                         },
-                    {'$limit': 10}
+                            ],
+                            'as': 'patients'
+                        }
+                    },
+                    {
+                        '$unwind': '$patients'
+                    },
+                    {
+                        '$replaceRoot': {'newRoot': '$patients'}
+                    },
+                    {
+                        '$limit': 10
+                    }
                 ]
             },
             {
@@ -402,4 +451,5 @@ def main():
     test_database_performance(queries, db_name)
 
 if __name__ == "__main__":
+
     main()
