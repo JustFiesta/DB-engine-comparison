@@ -27,7 +27,7 @@ source .venv/bin/activate
 # Instalacja zależności
 echo "Instalacja zależności..."
 pip install --upgrade pip
-pip install pandas pymongo psutil mysql-connector-python
+pip install pandas pymongo psutil mysql-connector-python openpyxl
 
 # Sprawdzenie instalacji zależności
 if [ $? -eq 0 ]; then

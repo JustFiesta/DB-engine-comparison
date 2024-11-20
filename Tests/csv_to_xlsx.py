@@ -1,7 +1,7 @@
 import pandas as pd
 
 # Stałe ścieżki dla plików
-CSV_FILE_PATH = "db_tests/system_stats.csv"
+CSV_FILE_PATH = "./system_stats.csv"
 XLSX_FILE_PATH = "./system_stats.xlsx"
 
 def csv_to_xlsx():

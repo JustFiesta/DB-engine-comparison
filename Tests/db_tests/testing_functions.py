@@ -14,9 +14,7 @@ def collect_system_stats():
     stats = {
         'cpu_percent': psutil.cpu_percent(interval=1),
         'memory_percent': psutil.virtual_memory().percent,
-        'read_bytes': process.io_counters().read_bytes,
         'write_bytes': process.io_counters().write_bytes,
-        'open_files': len(process.open_files()),
         'disk_usage_percent': psutil.disk_usage('/').percent,
         'disk_total': psutil.disk_usage('/').total,
         'disk_used': psutil.disk_usage('/').used,
@@ -52,7 +50,7 @@ def test_mariadb_query(database_name, query):
         cursor.close()
         conn.close()
 
-        return query_time, total_rows
+        return query_time
 
     except mysql.connector.Error as err:
         print(f"MariaDB Error: {err}")
@@ -114,8 +112,8 @@ def test_database_performance(queries, database_name):
     for query in queries['MariaDB']:
         mariadb_query_time = test_mariadb_query(database_name, query)
         system_stats = collect_system_stats()
-        system_stats['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
         system_stats['database'] = 'MariaDB'
+        system_stats['database_name'] = database_name  
         system_stats['query_time'] = mariadb_query_time
         save_to_csv(system_stats)
 
@@ -128,7 +126,7 @@ def test_database_performance(queries, database_name):
             projection=query_set.get('projection')
         )
         system_stats = collect_system_stats()
-        system_stats['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
         system_stats['database'] = 'MongoDB'
+        system_stats['database_name'] = database_name  
         system_stats['query_time'] = mongodb_query_time
         save_to_csv(system_stats)
