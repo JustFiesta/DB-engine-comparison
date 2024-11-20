@@ -250,15 +250,11 @@ def main():
             # podzapytania
             {
                 'collection': 'TripUsers',
+                'query': None,
                 'pipeline': [
                     {
                         '$facet': {
-                            'avgDurationYoung': [
-                                {
-                                    '$match': {
-                                        'birth_year': {'$lt': 1980}
-                                    }
-                                },
+                            'avgDuration': [
                                 {
                                     '$group': {
                                         '_id': None,
@@ -266,37 +262,35 @@ def main():
                                     }
                                 }
                             ],
-                            'allTripsYoung': [
+                            'allTrips': [
                                 {
-                                    '$match': {
-                                        'birth_year': {'$lt': 1980}
-                                    }
+                                    '$match': {}  
                                 }
                             ]
                         }
                     },
                     {
-                        '$unwind': '$avgDurationYoung'
+                        '$unwind': '$avgDuration'
                     },
                     {
-                        '$unwind': '$allTripsYoung'
+                        '$unwind': '$allTrips'
                     },
                     {
                         '$match': {
                             '$expr': {
-                                '$gt': ['$allTripsYoung.tripduration', '$avgDurationYoung.avg_tripduration']
+                                '$gt': ['$allTrips.tripduration', '$avgDuration.avg_tripduration']
                             }
                         }
                     },
                     {
-                        '$replaceRoot': { 'newRoot': '$allTripsYoung' }
+                        '$replaceRoot': { 'newRoot': '$allTrips' }
                     },
                     {
                         '$project': {
                             '_id': 0,
                             'trip_id': 1,
                             'tripduration': 1,
-                            'birth_year': 1
+                            'starttime': 1
                         }
                     }
                 ]
