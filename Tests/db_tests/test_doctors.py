@@ -43,15 +43,15 @@ def main():
             JOIN Doctors d ON a.doctor_id = d.doctor_id
             JOIN Patients p ON a.patient_id = p.patient_id
             LIMIT 10;""",
-            # """SELECT 
-            #     p.first_name,
-            #     p.last_name,
-            #     COUNT(*) as total_appointments
-            # FROM Appointments a
-            # JOIN Patients p ON a.patient_id = p.patient_id
-            # GROUP BY a.patient_id, p.first_name, p.last_name
-            # HAVING COUNT(*) > 7
-            # LIMIT 10;""",
+            """SELECT 
+                p.first_name,
+                p.last_name,
+                COUNT(*) as total_appointments
+            FROM Appointments a
+            JOIN Patients p ON a.patient_id = p.patient_id
+            GROUP BY a.patient_id, p.first_name, p.last_name
+            HAVING COUNT(*) > 7
+            LIMIT 10;""",
             # podzapytania
             """WITH DoctorWithMostPatients AS (
                 SELECT 
@@ -79,17 +79,17 @@ def main():
                 HAVING COUNT(appointment_id) >= 2
             );
             """,
-            # """SELECT DISTINCT 
-            #     first_name, 
-            #     last_name
-            # FROM Patients
-            # WHERE patient_id IN (
-            #     SELECT a.patient_id
-            #     FROM Appointments a
-            #     JOIN Doctors d ON a.doctor_id = d.doctor_id
-            #     WHERE d.specialization = 'Cardiology'
-            # )
-            # LIMIT 10;"""
+            """SELECT DISTINCT 
+                first_name, 
+                last_name
+            FROM Patients
+            WHERE patient_id IN (
+                SELECT a.patient_id
+                FROM Appointments a
+                JOIN Doctors d ON a.doctor_id = d.doctor_id
+                WHERE d.specialization = 'Cardiology'
+            )
+            LIMIT 10;"""
         ],
         'MongoDB': [
             # zapytania
@@ -114,13 +114,11 @@ def main():
                     {
                         '$project': {'_id': 0}
                     }
-                ],
-                'projection': None
+                ]
             },
             # grupowanie
             {
                 'collection': 'Patients',
-                'query': None,
                 'pipeline': [
                     {
                         '$addFields': {
@@ -157,12 +155,10 @@ def main():
                             'patient_count': 1
                         }
                     }
-                ],
-                'projection': None
+                ]
             },
             {
                 'collection': 'Appointments',
-                'query': None,
                 'pipeline': [
                     {
                         '$group': {
@@ -188,12 +184,10 @@ def main():
                             'doctor_count': 1
                         }
                     }
-                ],
-                'projection': None
+                ]
             },
             {
                 'collection': 'Appointments',
-                'query': None,
                 'pipeline': [
                     {
                         '$group': {
@@ -208,13 +202,11 @@ def main():
                             'diagnosis_count': 1
                         }
                     }
-                ],
-                'projection': None
+                ]
             },
             # joiny
             {
                 'collection': 'Appointments',
-                'query': None,
                 'pipeline': [
                     {
                         '$match': {
@@ -265,8 +257,7 @@ def main():
                             'treatment': 1
                         }
                     }
-                ],
-                'projection': None
+                ]
             },
             {
                 'collection': 'Appointments',
@@ -294,33 +285,31 @@ def main():
                         'diagnosis': 1
                     }},
                     {'$limit': 10}
-                ],
-                'projection': None
+                ]
             },
-            # {
-            #     'collection': 'Appointments',
-            #     'pipeline': [
-            #         {'$group': {
-            #             '_id': '$patient_id',
-            #             'total_appointments': {'$sum': 1}
-            #         }},
-            #         {'$match': {'total_appointments': {'$gt': 7}}},
-            #         {'$lookup': {
-            #             'from': 'Patients',
-            #             'localField': '_id',
-            #             'foreignField': 'patient_id',
-            #             'as': 'patient_info'
-            #         }},
-            #         {'$unwind': '$patient_info'},
-            #         {'$project': {
-            #             'first_name': '$patient_info.first_name',
-            #             'last_name': '$patient_info.last_name',
-            #             'total_appointments': 1
-            #         }},
-            #         {'$limit': 10}
-            #     ],
-            #     'projection': None
-            # },
+            {
+                'collection': 'Appointments',
+                'pipeline': [
+                    {'$group': {
+                        '_id': '$patient_id',
+                        'total_appointments': {'$sum': 1}
+                    }},
+                    {'$match': {'total_appointments': {'$gt': 5}}},
+                    {'$lookup': {
+                        'from': 'Patients',
+                        'localField': '_id',
+                        'foreignField': 'patient_id',
+                        'as': 'patient_info'
+                    }},
+                    {'$unwind': '$patient_info'},
+                    {'$project': {
+                        'first_name': '$patient_info.first_name',
+                        'last_name': '$patient_info.last_name',
+                        'total_appointments': 1
+                    }},
+                    {'$limit': 10}
+                ]
+            },
             # podzapytania
             {
                 'collection': 'Appointments',
@@ -365,8 +354,7 @@ def main():
                     {'$replaceRoot': {'newRoot': '$patients'}
                                          },
                     {'$limit': 10}
-                ],
-                'projection': None
+                ]
             },
             {
                 'collection': 'Appointments',
@@ -403,8 +391,7 @@ def main():
                             'last_name': '$patient_info.last_name'
                         }
                     }
-                ],
-                'projection': None
+                ]
             },
             {
                 'collection': 'Appointments',
@@ -451,8 +438,7 @@ def main():
                     {
                         '$limit': 10
                     }
-                ],
-                'projection': None
+                ]
             },
         ]
     }
